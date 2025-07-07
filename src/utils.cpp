@@ -3,7 +3,7 @@
 
 #include "driver/rtc_io.h"
 
-#include <WiFi.h>
+#include <HTTPClient.h>
 
 String logBuffer = "";
 
@@ -60,4 +60,25 @@ void sendLog()
     } else {
         serialLog("Failed to connect to the log server.");
     }
+}
+
+void sendToDatabase(float temperature_c, float humidity, float pressure, float dewpoint_c,
+    float illumination, float battery_voltage, float solar_panel_voltage)
+{
+    HTTPClient http;
+    String url = String(TEST_SERVER_HOST) + ":" + String(TEST_SERVER_PORT) + "/api/weather"
+        + "?temperature=" + String(temperature_c, 2) + "&dew_point=" + String(dewpoint_c, 2)
+        + "&humidity=" + String(humidity, 1) + "&illumination=" + String(illumination, 1)
+        + "&pressure=" + String(pressure, 2) + "&battery_voltage=" + String(battery_voltage, 2)
+        + "&solar_panel_voltage=" + String(solar_panel_voltage, 2);
+
+    serialLog("Sending to: " + url);
+    http.begin(url);
+    int httpCode = http.GET();
+    if (httpCode > 0) {
+        serialLog("Response: " + http.getString());
+    } else {
+        serialLog("Error on sending request");
+    }
+    http.end();
 }

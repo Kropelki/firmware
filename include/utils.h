@@ -15,4 +15,7 @@ void connectToWiFi();
 
 void sendLog();
 
+void sendToDatabase(float temperature_c, float humidity, float pressure, float dewpoint_c,
+    float illumination, float battery_voltage, float solar_panel_voltage);
+
 #endif // UTILS_H

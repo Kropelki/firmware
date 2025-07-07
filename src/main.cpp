@@ -10,6 +10,7 @@
 #include "env.h"
 #include "influxdb.h"
 #include "utils.h"
+#include "wunderground.h"
 
 const float voltage_multiplier = 3.2;
 
@@ -22,60 +23,6 @@ const float voltage_multiplier = 3.2;
 Adafruit_BMP280 bmp;
 Adafruit_AHTX0 aht;
 BH1750 lightMeter;
-
-void sendToDatabase(float temperature_c, float humidity, float pressure, float dewpoint_c,
-    float illumination, float battery_voltage, float solar_panel_voltage)
-{
-    HTTPClient http;
-    String url = String(TEST_SERVER_HOST) + ":" + String(TEST_SERVER_PORT) + "/api/weather"
-        + "?temperature=" + String(temperature_c, 2) + "&dew_point=" + String(dewpoint_c, 2)
-        + "&humidity=" + String(humidity, 1) + "&illumination=" + String(illumination, 1)
-        + "&pressure=" + String(pressure, 2) + "&battery_voltage=" + String(battery_voltage, 2)
-        + "&solar_panel_voltage=" + String(solar_panel_voltage, 2);
-
-    serialLog("Sending to: " + url);
-    http.begin(url);
-    int httpCode = http.GET();
-    if (httpCode > 0) {
-        serialLog("Response: " + http.getString());
-    } else {
-        serialLog("Error on sending request");
-    }
-    http.end();
-}
-
-void sendToWeatherUnderground(float temperature_f, int humidity, float baromin, float dewpoint_f)
-{
-    if (WiFi.status() == WL_CONNECTED) {
-        String url = "http://weatherstation.wunderground.com/weatherstation/"
-                     "updateweatherstation.php";
-        url += "?ID=" + String(WEATHER_UNDERGROUND_STATION_ID);
-        url += "&PASSWORD=" + String(WEATHER_UNDERGROUND_API_KEY);
-        url += "&dateutc=now";
-        url += "&tempf=" + String(temperature_f, 2);
-        url += "&dewptf=" + String(dewpoint_f, 2);
-        url += "&humidity=" + String(humidity);
-        url += "&baromin=" + String(baromin, 2);
-        url += "&action=updateraw";
-
-        Serial.println("Sending data: " + url);
-
-        HTTPClient http;
-        http.begin(url);
-        int httpCode = http.GET();
-
-        if (httpCode > 0) {
-            String payload = http.getString();
-            Serial.println("Response: " + payload);
-        } else {
-            Serial.println("Sending error: " + http.errorToString(httpCode));
-        }
-
-        http.end();
-    } else {
-        serialLog("WiFi not connected");
-    }
-}
 
 void setup()
 {
