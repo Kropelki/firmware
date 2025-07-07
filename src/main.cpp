@@ -92,7 +92,7 @@ void setup()
     unsigned long activeTime = (millis() - startTime) / 1000;
     // sendToDatabase(temperature_c, humidity, pressure, dewpoint_c,
     // illumination, battery_voltage, solar_panel_voltage);
-    sendToInfluxDB(temperature_c, humidity, pressure, dewpoint_c, illumination, battery_voltage,
+    send_to_influx_db(temperature_c, humidity, pressure, dewpoint_c, illumination, battery_voltage,
         solar_panel_voltage);
 
     if (temperature_c != -1000 || humidity != -1000 || pressure != -1000) {

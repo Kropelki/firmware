@@ -3,45 +3,60 @@
 
 #include <HTTPClient.h>
 
-void sendToInfluxDB(float temperature_c, float humidity, float pressure, float dewpoint_c,
+/**
+ * Sends weather sensor data to InfluxDB using HTTP POST request
+ *
+ * This function constructs an InfluxDB line protocol payload with sensor readings
+ * and transmits it to the configured InfluxDB instance via HTTP API v2.
+ *
+ * Link to InfluxDB API documentation:
+ * https://docs.influxdata.com/influxdb3/cloud-serverless/get-started/write/?t=v2+API#write-line-protocol-to-influxdb
+ *
+ * @param temperature Temperature in Celsius
+ * @param humidity Relative humidity percentage
+ * @param pressure Atmospheric pressure
+ * @param dewpoint Dew point in Celsius
+ * @param illumination Light intensity measurement
+ * @param battery_voltage Battery voltage level
+ * @param solar_panel_voltage Solar panel voltage output
+ *
+ * @note Requires active WiFi connection. Function will log error if WiFi disconnected.
+ * @note Uses InfluxDB API v2 with token-based authentication.
+ */
+void send_to_influx_db(float temperature, float humidity, float pressure, float dewpoint,
     float illumination, float battery_voltage, float solar_panel_voltage)
 {
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
 
-        const char* InfluxDB_url = "https://eu-central-1-1.aws.cloud2.influxdata.com/api/v2/"
-                                   "write?bucket=db.v0&precision=ns";
+        String request_url = String(INFLUXDB_HOSTNAME) + "/api/v2/write?"
+            + "bucket=" + String(INFLUXDB_BUCKET) + "&precision=ns";
 
         serialLog("Sending data to InfluxDB...");
 
-        http.begin(InfluxDB_url);
-        http.setTimeout(10000);
+        http.begin(request_url);
+        http.setTimeout(10000); // 10s
 
-        http.addHeader("Authorization", String("Token ") + INFLUXDB_API_TOKEN);
+        http.addHeader("Authorization", "Token " + String(INFLUXDB_API_TOKEN));
         http.addHeader("Content-Type", "text/plain; charset=utf-8");
         http.addHeader("Accept", "application/json");
 
-        // String payload = "weather
-        // temperature=200.37,humidity=40.2,pressure=1012,illumination=56.3,dew_point=30";
-        String payload = String("weather ") + "temperature=" + String(temperature_c, 2) + ","
+        // Format: "weather temperature=XX.XX,humidity=XX.X,pressure=XX.XX,..."
+        String payload = String("weather ") + "temperature=" + String(temperature, 2) + ","
             + "humidity=" + String(humidity, 1) + "," + "pressure=" + String(pressure, 2) + ","
-            + "illumination=" + String(illumination, 1) + "," + "dew_point=" + String(dewpoint_c, 1)
+            + "illumination=" + String(illumination, 1) + "," + "dew_point=" + String(dewpoint, 1)
             + "," + "battery_voltage=" + String(battery_voltage, 2) + ","
             + "solar_panel_voltage=" + String(solar_panel_voltage, 2);
 
-        int httpResponseCode = http.POST(payload);
+        int response_code = http.POST(payload);
         serialLog(payload);
 
-        if (httpResponseCode > 0) {
-            // String response = http.getString();
+        if (response_code > 0) {
             serialLog("HTTP Response Code: ");
-            serialLog(String(httpResponseCode));
-            // serialLog("Response: ");
-            // serialLog(response);
+            serialLog(String(response_code));
         } else {
             serialLog("Error in HTTP request: ");
-            serialLog(String(httpResponseCode));
-            // serialLog(http.getString());
+            serialLog(String(response_code));
         }
 
         http.end();

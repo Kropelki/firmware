@@ -6,7 +6,7 @@
 
 #include <HTTPClient.h>
 
-void sendToInfluxDB(float temperature_c, float humidity, float pressure, float dewpoint_c,
+void send_to_influx_db(float temperature, float humidity, float pressure, float dewpoint,
     float illumination, float battery_voltage, float solar_panel_voltage);
 
 #endif // INFLUXDB_H
