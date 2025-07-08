@@ -3,6 +3,18 @@
 
 #include <HTTPClient.h>
 
+/**
+ * Sends weather data to Weather Underground station
+ *
+ * This function transmits current weather measurements to the Weather Underground
+ * service via HTTP GET request. The data is sent in Fahrenheit units for temperature
+ * and dewpoint, with humidity as percentage and barometric pressure in inches.
+ *
+ * @param temperature Current temperature in Fahrenheit
+ * @param humidity Relative humidity as percentage (0-100)
+ * @param baromin Barometric pressure in inches of mercury
+ * @param dewpoint Dew point temperature in Fahrenheit
+ */
 void send_to_wunderground(float temperature, int humidity, float baromin, float dewpoint)
 {
     if (WiFi.status() == WL_CONNECTED) {
@@ -21,13 +33,13 @@ void send_to_wunderground(float temperature, int humidity, float baromin, float 
 
         HTTPClient http;
         http.begin(url);
-        int httpCode = http.GET();
+        int http_code = http.GET();
 
-        if (httpCode > 0) {
+        if (http_code > 0) {
             String payload = http.getString();
             Serial.println("Response: " + payload);
         } else {
-            Serial.println("Sending error: " + http.errorToString(httpCode));
+            Serial.println("Sending error: " + http.errorToString(http_code));
         }
 
         http.end();
