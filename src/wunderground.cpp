@@ -8,14 +8,14 @@
  *
  * This function transmits current weather measurements to the Weather Underground
  * service via HTTP GET request. The data is sent in Fahrenheit units for temperature
- * and dewpoint, with humidity as percentage and barometric pressure in inches.
+ * and dew point, with humidity as percentage and barometric pressure in inches.
  *
  * @param temperature Current temperature in Fahrenheit
  * @param humidity Relative humidity as percentage (0-100)
  * @param baromin Barometric pressure in inches of mercury
- * @param dewpoint Dew point temperature in Fahrenheit
+ * @param dew_point Dew point temperature in Fahrenheit
  */
-void send_to_wunderground(float temperature, int humidity, float baromin, float dewpoint)
+void send_to_wunderground(float temperature, int humidity, float baromin, float dew_point)
 {
     if (WiFi.status() == WL_CONNECTED) {
         String url = "http://weatherstation.wunderground.com/weatherstation/"
@@ -24,7 +24,7 @@ void send_to_wunderground(float temperature, int humidity, float baromin, float 
         url += "&PASSWORD=" + String(WEATHER_UNDERGROUND_API_KEY);
         url += "&dateutc=now";
         url += "&tempf=" + String(temperature, 2);
-        url += "&dewptf=" + String(dewpoint, 2);
+        url += "&dewptf=" + String(dew_point, 2);
         url += "&humidity=" + String(humidity);
         url += "&baromin=" + String(baromin, 2);
         url += "&action=updateraw";

@@ -15,7 +15,7 @@
  * @param temperature Temperature in Celsius
  * @param humidity Relative humidity percentage
  * @param pressure Atmospheric pressure
- * @param dewpoint Dew point in Celsius
+ * @param dew_point Dew point in Celsius
  * @param illumination Light intensity measurement
  * @param battery_voltage Battery voltage level
  * @param solar_panel_voltage Solar panel voltage output
@@ -23,7 +23,7 @@
  * @note Requires active WiFi connection. Function will log error if WiFi disconnected.
  * @note Uses InfluxDB API v2 with token-based authentication.
  */
-void send_to_influx_db(float temperature, float humidity, float pressure, float dewpoint,
+void send_to_influx_db(float temperature, float humidity, float pressure, float dew_point,
     float illumination, float battery_voltage, float solar_panel_voltage)
 {
     if (WiFi.status() == WL_CONNECTED) {
@@ -44,7 +44,7 @@ void send_to_influx_db(float temperature, float humidity, float pressure, float 
         // Format: "weather temperature=XX.XX,humidity=XX.X,pressure=XX.XX,..."
         String payload = String("weather ") + "temperature=" + String(temperature, 2) + ","
             + "humidity=" + String(humidity, 1) + "," + "pressure=" + String(pressure, 2) + ","
-            + "illumination=" + String(illumination, 1) + "," + "dew_point=" + String(dewpoint, 1)
+            + "illumination=" + String(illumination, 1) + "," + "dew_point=" + String(dew_point, 1)
             + "," + "battery_voltage=" + String(battery_voltage, 2) + ","
             + "solar_panel_voltage=" + String(solar_panel_voltage, 2);
 

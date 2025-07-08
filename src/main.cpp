@@ -76,28 +76,28 @@ void setup()
 
     float temperature_f = temperature_c * 9.0 / 5.0 + 32.0;
     float baromin = pressure * 0.02953;
-    float dewpoint_c = calculate_dew_point(temperature_c, humidity);
-    float dewpoint_f = dewpoint_c * 9.0 / 5.0 + 32.0;
+    float dew_point_c = calculate_dew_point(temperature_c, humidity);
+    float dew_point_f = dew_point_c * 9.0 / 5.0 + 32.0;
 
     serial_log(
         "Temperature: " + String(temperature_c, 2) + " °C (" + String(temperature_f, 2) + " °F)");
     serial_log("Humidity: " + String(humidity, 1) + " %");
     serial_log("Pressure: " + String(pressure, 2) + " hPa");
     serial_log("Baromin: " + String(baromin, 2) + " inHg");
-    serial_log("Dew Point: " + String(dewpoint_c, 2) + " °C (" + String(dewpoint_f, 2) + " °F)");
+    serial_log("Dew Point: " + String(dew_point_c, 2) + " °C (" + String(dew_point_f, 2) + " °F)");
     serial_log("Illumination: " + String(illumination, 1) + " lx");
     serial_log("Battery voltage: " + String(battery_voltage, 2) + " V");
     serial_log("Solar panel voltage: " + String(solar_panel_voltage, 2) + " V");
 
     unsigned long activeTime = (millis() - startTime) / 1000;
-    // send_to_database(temperature_c, humidity, pressure, dewpoint_c,
+    // send_to_database(temperature_c, humidity, pressure, dew_point_c,
     // illumination, battery_voltage, solar_panel_voltage);
-    send_to_influx_db(temperature_c, humidity, pressure, dewpoint_c, illumination, battery_voltage,
+    send_to_influx_db(temperature_c, humidity, pressure, dew_point_c, illumination, battery_voltage,
         solar_panel_voltage);
 
     if (temperature_c != -1000 || humidity != -1000 || pressure != -1000) {
         if (SEND_TO_WEATHER_UNDERGROUND) {
-            send_to_wunderground(temperature_f, humidity, baromin, dewpoint_f);
+            send_to_wunderground(temperature_f, humidity, baromin, dew_point_f);
         } else {
             serial_log("WeatherUnderground sending is disabled.");
         }
