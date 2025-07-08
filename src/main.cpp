@@ -19,10 +19,9 @@ const float voltage_multiplier = 3.2;
 #define SOLAR_PANEL_VOLTAGE_PIN 35
 #define BATTERY_VOLTAGE_PIN 34
 
-// Sensor instances
-Adafruit_BMP280 bmp;
-Adafruit_AHTX0 aht;
-BH1750 lightMeter;
+Adafruit_BMP280 bmp_sensor; // BMP280: measures pressure
+Adafruit_AHTX0 aht_sensor; // AHT20: measures temperature and humidity
+BH1750 light_meter; // BH1750: measures illumination
 
 void setup()
 {
@@ -48,23 +47,23 @@ void setup()
     float humidity = -1000;
     float pressure = -1000;
 
-    if (bmp.begin(0x77)) {
-        pressure = bmp.readPressure() / 100.0;
+    if (bmp_sensor.begin(0x77)) {
+        pressure = bmp_sensor.readPressure() / 100.0;
     } else {
         serial_log("Could not find BMP280!");
     }
 
-    if (aht.begin()) {
+    if (aht_sensor.begin()) {
         sensors_event_t hum, temp;
-        aht.getEvent(&hum, &temp);
+        aht_sensor.getEvent(&hum, &temp);
         temperature_c = temp.temperature;
         humidity = hum.relative_humidity;
     } else {
         serial_log("Could not find AHT20!");
     }
 
-    if (lightMeter.begin()) {
-        float illumination = lightMeter.readLightLevel();
+    if (light_meter.begin()) {
+        float illumination = light_meter.readLightLevel();
     } else {
         serial_log("Could not find BH1750!");
     }
@@ -115,7 +114,4 @@ void setup()
     esp_deep_sleep_start();
 }
 
-void loop()
-{
-    // Empty, everything is done in setup()
-}
+void loop() { }
