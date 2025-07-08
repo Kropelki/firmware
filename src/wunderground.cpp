@@ -44,6 +44,6 @@ void send_to_wunderground(float temperature, int humidity, float baromin, float 
 
         http.end();
     } else {
-        serialLog("WiFi not connected");
+        serial_log("WiFi not connected");
     }
 }

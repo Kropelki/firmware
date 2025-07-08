@@ -5,17 +5,17 @@
 
 extern String logBuffer;
 
-void serialLog(String message);
+void serial_log(String message);
 
-float calculateDewPoint(float temperature_c, float humidity);
+float calculate_dew_point(float temperature_c, float humidity);
 
 void isolate_all_rtc_gpio();
 
-void connectToWiFi();
+void connect_to_wifi();
 
-void sendLog();
+void send_log();
 
-void sendToDatabase(float temperature_c, float humidity, float pressure, float dewpoint_c,
+void send_to_database(float temperature_c, float humidity, float pressure, float dewpoint_c,
     float illumination, float battery_voltage, float solar_panel_voltage);
 
 #endif // UTILS_H

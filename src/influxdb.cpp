@@ -32,7 +32,7 @@ void send_to_influx_db(float temperature, float humidity, float pressure, float 
         String request_url = String(INFLUXDB_HOSTNAME) + "/api/v2/write?"
             + "bucket=" + String(INFLUXDB_BUCKET) + "&precision=ns";
 
-        serialLog("Sending data to InfluxDB...");
+        serial_log("Sending data to InfluxDB...");
 
         http.begin(request_url);
         http.setTimeout(10000); // 10s
@@ -49,18 +49,18 @@ void send_to_influx_db(float temperature, float humidity, float pressure, float 
             + "solar_panel_voltage=" + String(solar_panel_voltage, 2);
 
         int response_code = http.POST(payload);
-        serialLog(payload);
+        serial_log(payload);
 
         if (response_code > 0) {
-            serialLog("HTTP Response Code: ");
-            serialLog(String(response_code));
+            serial_log("HTTP Response Code: ");
+            serial_log(String(response_code));
         } else {
-            serialLog("Error in HTTP request: ");
-            serialLog(String(response_code));
+            serial_log("Error in HTTP request: ");
+            serial_log(String(response_code));
         }
 
         http.end();
     } else {
-        serialLog("WiFi not connected");
+        serial_log("WiFi not connected");
     }
 }
