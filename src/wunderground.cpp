@@ -3,7 +3,7 @@
 
 #include <HTTPClient.h>
 
-void sendToWeatherUnderground(float temperature_f, int humidity, float baromin, float dewpoint_f)
+void send_to_wunderground(float temperature, int humidity, float baromin, float dewpoint)
 {
     if (WiFi.status() == WL_CONNECTED) {
         String url = "http://weatherstation.wunderground.com/weatherstation/"
@@ -11,8 +11,8 @@ void sendToWeatherUnderground(float temperature_f, int humidity, float baromin, 
         url += "?ID=" + String(WEATHER_UNDERGROUND_STATION_ID);
         url += "&PASSWORD=" + String(WEATHER_UNDERGROUND_API_KEY);
         url += "&dateutc=now";
-        url += "&tempf=" + String(temperature_f, 2);
-        url += "&dewptf=" + String(dewpoint_f, 2);
+        url += "&tempf=" + String(temperature, 2);
+        url += "&dewptf=" + String(dewpoint, 2);
         url += "&humidity=" + String(humidity);
         url += "&baromin=" + String(baromin, 2);
         url += "&action=updateraw";

@@ -1,6 +1,6 @@
 #ifndef WUNDERGROUND_H
 #define WUNDERGROUND_H
 
-void sendToWeatherUnderground(float temperature_f, int humidity, float baromin, float dewpoint_f);
+void send_to_wunderground(float temperature, int humidity, float baromin, float dewpoint);
 
 #endif // WUNDERGROUND_H

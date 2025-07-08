@@ -96,7 +96,11 @@ void setup()
         solar_panel_voltage);
 
     if (temperature_c != -1000 || humidity != -1000 || pressure != -1000) {
-        sendToWeatherUnderground(temperature_f, humidity, baromin, dewpoint_f);
+        if (SEND_TO_WEATHER_UNDERGROUND) {
+            send_to_wunderground(temperature_f, humidity, baromin, dewpoint_f);
+        } else {
+            serialLog("WeatherUnderground sending is disabled.");
+        }
     } else {
         serialLog("Can not send data to WeatherUnderground");
     }
