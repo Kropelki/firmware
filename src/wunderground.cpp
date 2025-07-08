@@ -2,6 +2,7 @@
 #include "utils.h"
 
 #include <HTTPClient.h>
+#include <WiFi.h>
 
 /**
  * Sends weather data to Weather Underground station

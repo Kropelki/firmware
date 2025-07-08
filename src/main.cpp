@@ -1,11 +1,8 @@
 #include <Adafruit_AHTX0.h>
 #include <Adafruit_BMP280.h>
 #include <BH1750.h>
-#include <HTTPClient.h>
 #include <WiFi.h>
-#include <WiFiClient.h>
 #include <Wire.h>
-#include <math.h>
 
 #include "env.h"
 #include "influxdb.h"
@@ -89,8 +86,6 @@ void setup()
     serial_log("Solar panel voltage: " + String(solar_panel_voltage, 2) + " V");
 
     unsigned long activeTime = (millis() - startTime) / 1000;
-    // send_to_database(temperature_c, humidity, pressure, dew_point_c,
-    // illumination, battery_voltage, solar_panel_voltage);
     send_to_influx_db(temperature_c, humidity, pressure, dew_point_c, illumination, battery_voltage,
         solar_panel_voltage);
 
@@ -108,8 +103,10 @@ void setup()
 
     isolate_all_rtc_gpio();
     WiFi.mode(WIFI_OFF);
+
     unsigned long sleepTime = (CYCLE_TIME_SEC - activeTime) * 1000000;
     serial_log("Entering deep sleep for " + String(sleepTime / 1000000) + " seconds...");
+
     esp_sleep_enable_timer_wakeup(sleepTime);
     esp_deep_sleep_start();
 }

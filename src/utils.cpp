@@ -4,6 +4,8 @@
 #include "driver/rtc_io.h"
 
 #include <HTTPClient.h>
+#include <WiFi.h>
+#include <WiFiClient.h>
 
 String log_buffer = "";
 

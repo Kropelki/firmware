@@ -2,6 +2,7 @@
 #include "utils.h"
 
 #include <HTTPClient.h>
+#include <WiFi.h>
 
 /**
  * Sends weather sensor data to InfluxDB using HTTP POST request
