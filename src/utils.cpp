@@ -83,12 +83,6 @@ void connect_to_wifi()
     
     Serial.println("Response: " + String(WiFi.status()));
     ESP.restart();
-    // while (WiFi.status() != WL_CONNECTED) {
-    //     delay(500);
-    //     serial_log(".");
-    // }
-    // serial_log("\nWiFi connected!");
-    // serial_log(WiFi.localIP().toString());
 }
 
 /**
