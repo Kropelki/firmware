@@ -60,21 +60,35 @@ void isolate_all_rtc_gpio()
 
 /**
  * Establishes a WiFi connection using credentials from env.h
- *
- * @note This function will block indefinitely if WiFi connection fails
- * TODO(FIX): this surely shouldn't be implemented this way
- * TODO(FIX): we should FIX it ASAP as it already caused issues
  */
 void connect_to_wifi()
 {
     serial_log("Connecting to WiFi...");
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    while (WiFi.status() != WL_CONNECTED) {
+    for (int i = 0; i < 20; i++) {
+        if (WiFi.status() == WL_CONNECTED) {
+            serial_log("\nWiFi connected!");
+            serial_log(WiFi.localIP().toString());
+            return;
+        }
+        if (WiFi.status() == WL_NO_SSID_AVAIL) {
+            Serial.println("SSID not found!");
+            Serial.println("Entering deep sleep for 5 minutes.");
+            esp_sleep_enable_timer_wakeup(300000000);
+            esp_deep_sleep_start();
+        }
         delay(500);
         serial_log(".");
     }
-    serial_log("\nWiFi connected!");
-    serial_log(WiFi.localIP().toString());
+    
+    Serial.println("Response: " + String(WiFi.status()));
+    ESP.restart();
+    // while (WiFi.status() != WL_CONNECTED) {
+    //     delay(500);
+    //     serial_log(".");
+    // }
+    // serial_log("\nWiFi connected!");
+    // serial_log(WiFi.localIP().toString());
 }
 
 /**
