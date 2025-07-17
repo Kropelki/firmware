@@ -60,7 +60,7 @@ void setup()
     }
 
     if (light_meter.begin()) {
-        float illumination = light_meter.readLightLevel();
+        illumination = light_meter.readLightLevel();
     } else {
         serial_log("Could not find BH1750!");
     }
