@@ -23,6 +23,13 @@ This repository contains the firmware code for an ESP32-based weather station th
 - Deep sleep mode between measurements
 - Configurable measurement intervals
 - Solar panel and battery voltage monitoring
+- **Enhanced power optimization:**
+  - CPU frequency scaling (40-240MHz based on operation)
+  - Unused peripheral shutdown (SPI, I2S, extra UARTs, etc.)
+  - WiFi power save modes
+  - ADC power management
+  - Configurable power profiles (Aggressive/Balanced/Performance)
+  - RTC GPIO isolation and comprehensive deep sleep optimization
 
 ---
 
@@ -34,6 +41,9 @@ This repository contains the firmware code for an ESP32-based weather station th
 | `INFLUXDB_API_TOKEN` | InfluxDB authentication token | - |
 | `WEATHER_UNDERGROUND_STATION_ID` | Weather Underground station ID | - |
 | `WEATHER_UNDERGROUND_API_KEY` | Weather Underground API key | - |
+| `POWER_PROFILE` | Power management profile (1=Aggressive, 2=Balanced, 3=Performance) | 2 |
+
+For detailed power management configuration, see [POWER_MANAGEMENT.md](POWER_MANAGEMENT.md).
 
 ---
 
