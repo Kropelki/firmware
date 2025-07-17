@@ -23,7 +23,13 @@ BH1750 light_meter; // BH1750: measures illumination
 void setup()
 {
     unsigned long startTime = millis();
+    
+    // Start with low power CPU frequency
+    optimize_cpu_frequency(false);
+    
+    // Disable Bluetooth and unused peripherals immediately
     btStop();
+    disable_unused_peripherals();
 
     pinMode(BMP280_AHT20_PIN, OUTPUT);
     pinMode(BH1750_PIN, OUTPUT);
@@ -37,7 +43,11 @@ void setup()
     delay(1000);
 
     Wire.begin(21, 22); // SDA, SCL
+    
+    // Switch to high performance mode for WiFi operations
+    optimize_cpu_frequency(true);
     connect_to_wifi();
+    enable_wifi_power_save();
 
     float illumination = 0;
     float temperature_c = -1000;
@@ -69,6 +79,12 @@ void setup()
     float solar_panel_voltage = (raw / 4095.0) * 3.3 * voltage_multiplier;
     raw = analogRead(BATTERY_VOLTAGE_PIN);
     float battery_voltage = (raw / 4095.0) * 3.3 * voltage_multiplier;
+    
+    // Optimize ADC power after voltage readings
+    optimize_adc_power();
+
+    // Switch back to low power CPU frequency for calculations
+    optimize_cpu_frequency(false);
 
     float temperature_f = temperature_c * 9.0 / 5.0 + 32.0;
     float baromin = pressure * 0.02953;
@@ -84,8 +100,13 @@ void setup()
     serial_log("Illumination: " + String(illumination, 1) + " lx");
     serial_log("Battery voltage: " + String(battery_voltage, 2) + " V");
     serial_log("Solar panel voltage: " + String(solar_panel_voltage, 2) + " V");
+    serial_log("Active time: " + String(activeTime) + " seconds");
 
     unsigned long activeTime = (millis() - startTime) / 1000;
+    
+    // Switch to high performance mode for network operations
+    optimize_cpu_frequency(true);
+    
     send_to_influx_db(temperature_c, humidity, pressure, dew_point_c, illumination, battery_voltage,
         solar_panel_voltage);
 
@@ -101,11 +122,13 @@ void setup()
 
     send_log();
 
+    // Prepare system for optimized deep sleep
+    prepare_for_deep_sleep();
     isolate_all_rtc_gpio();
     WiFi.mode(WIFI_OFF);
 
     unsigned long sleepTime = (CYCLE_TIME_SEC - activeTime) * 1000000;
-    serial_log("Entering deep sleep for " + String(sleepTime / 1000000) + " seconds...");
+    serial_log("Entering optimized deep sleep for " + String(sleepTime / 1000000) + " seconds...");
 
     esp_sleep_enable_timer_wakeup(sleepTime);
     esp_deep_sleep_start();

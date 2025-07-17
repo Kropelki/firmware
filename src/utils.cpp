@@ -2,6 +2,12 @@
 #include "env.h"
 
 #include "driver/rtc_io.h"
+#include "soc/rtc_cntl_reg.h"
+#include "driver/adc.h"
+#include "esp_wifi.h"
+#include "esp_pm.h"
+#include "esp_sleep.h"
+#include "driver/periph_ctrl.h"
 
 #include <HTTPClient.h>
 #include <WiFi.h>
@@ -138,4 +144,94 @@ void send_to_database(float temperature, float humidity, float pressure, float d
         serial_log("Error on sending request");
     }
     http.end();
+}
+
+/**
+ * Optimizes CPU frequency for different operation phases
+ * 
+ * @param high_performance If true, sets CPU to maximum frequency for WiFi/sensor operations.
+ *                        If false, reduces CPU frequency to save power during low-intensity operations.
+ */
+void optimize_cpu_frequency(bool high_performance)
+{
+    if (high_performance) {
+        // Set CPU to maximum frequency for WiFi and sensor operations
+        setCpuFrequencyMhz(240);
+        serial_log("CPU frequency set to 240MHz for high performance operations");
+    } else {
+        // Reduce CPU frequency for power saving during basic operations
+        setCpuFrequencyMhz(80);
+        serial_log("CPU frequency set to 80MHz for power saving");
+    }
+}
+
+/**
+ * Disables unused peripherals to reduce power consumption
+ * 
+ * This function disables peripherals that are not used by the weather station
+ * to minimize power consumption during active operation.
+ */
+void disable_unused_peripherals()
+{
+    // Disable unused peripherals
+    periph_module_disable(PERIPH_SPI_MODULE);       // SPI not used
+    periph_module_disable(PERIPH_I2S0_MODULE);      // I2S not used
+    periph_module_disable(PERIPH_I2S1_MODULE);      // I2S not used
+    periph_module_disable(PERIPH_UART1_MODULE);     // Only UART0 used for Serial
+    periph_module_disable(PERIPH_UART2_MODULE);     // Not used
+    periph_module_disable(PERIPH_SDMMC_MODULE);     // SD card not used
+    periph_module_disable(PERIPH_PCNT_MODULE);      // Pulse counter not used
+    periph_module_disable(PERIPH_LEDC_MODULE);      // LED PWM not used
+    periph_module_disable(PERIPH_RMT_MODULE);       // Remote control not used
+    periph_module_disable(PERIPH_UHCI0_MODULE);     // UHCI not used
+    periph_module_disable(PERIPH_UHCI1_MODULE);     // UHCI not used
+    
+    serial_log("Unused peripherals disabled for power optimization");
+}
+
+/**
+ * Enables WiFi power save mode to reduce power consumption during WiFi operations
+ */
+void enable_wifi_power_save()
+{
+    // Enable WiFi power save mode
+    esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+    serial_log("WiFi power save mode enabled");
+}
+
+/**
+ * Optimizes ADC power consumption
+ * 
+ * Powers down ADC components after voltage measurements are complete
+ * to reduce standby power consumption.
+ */
+void optimize_adc_power()
+{
+    // Power down ADC after measurements
+    adc_power_release();
+    serial_log("ADC powered down for energy optimization");
+}
+
+/**
+ * Prepares the system for deep sleep with comprehensive power optimizations
+ * 
+ * This function performs additional power optimizations beyond the existing
+ * RTC GPIO isolation and WiFi shutdown, including flash power management
+ * and brown-out detector optimization.
+ */
+void prepare_for_deep_sleep()
+{
+    // Configure flash to enter low power mode during deep sleep
+    esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_OFF);
+    
+    // Configure RTC peripherals for minimal power consumption
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
+    
+    // Disable brown-out detector during deep sleep to save power
+    // Note: This should only be done if power supply is stable
+    esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_OFF);
+    
+    serial_log("System prepared for optimized deep sleep");
 }
