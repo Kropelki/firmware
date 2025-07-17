@@ -24,5 +24,6 @@ void disable_unused_peripherals();
 void enable_wifi_power_save();
 void optimize_adc_power();
 void prepare_for_deep_sleep();
+void log_power_profile();
 
 #endif // UTILS_H

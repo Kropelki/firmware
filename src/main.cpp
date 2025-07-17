@@ -41,6 +41,9 @@ void setup()
 
     Serial.begin(115200);
     delay(1000);
+    
+    // Log power management configuration
+    log_power_profile();
 
     Wire.begin(21, 22); // SDA, SCL
     

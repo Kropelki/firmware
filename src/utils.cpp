@@ -156,12 +156,24 @@ void optimize_cpu_frequency(bool high_performance)
 {
     if (high_performance) {
         // Set CPU to maximum frequency for WiFi and sensor operations
-        setCpuFrequencyMhz(240);
-        serial_log("CPU frequency set to 240MHz for high performance operations");
+        setCpuFrequencyMhz(CPU_FREQ_HIGH_PERFORMANCE);
+        serial_log("CPU frequency set to " + String(CPU_FREQ_HIGH_PERFORMANCE) + "MHz for high performance operations");
     } else {
-        // Reduce CPU frequency for power saving during basic operations
-        setCpuFrequencyMhz(80);
-        serial_log("CPU frequency set to 80MHz for power saving");
+        // Reduce CPU frequency based on power profile
+        uint8_t low_power_freq;
+        switch (POWER_PROFILE) {
+            case POWER_PROFILE_AGGRESSIVE:
+                low_power_freq = CPU_FREQ_AGGRESSIVE;
+                break;
+            case POWER_PROFILE_PERFORMANCE:
+                low_power_freq = 160; // Higher baseline for performance profile
+                break;
+            default: // POWER_PROFILE_BALANCED
+                low_power_freq = CPU_FREQ_LOW_POWER;
+                break;
+        }
+        setCpuFrequencyMhz(low_power_freq);
+        serial_log("CPU frequency set to " + String(low_power_freq) + "MHz for power saving (profile: " + String(POWER_PROFILE) + ")");
     }
 }
 
@@ -169,11 +181,12 @@ void optimize_cpu_frequency(bool high_performance)
  * Disables unused peripherals to reduce power consumption
  * 
  * This function disables peripherals that are not used by the weather station
- * to minimize power consumption during active operation.
+ * to minimize power consumption during active operation. The aggressiveness
+ * depends on the configured power profile.
  */
 void disable_unused_peripherals()
 {
-    // Disable unused peripherals
+    // Always disable these unused peripherals
     periph_module_disable(PERIPH_SPI_MODULE);       // SPI not used
     periph_module_disable(PERIPH_I2S0_MODULE);      // I2S not used
     periph_module_disable(PERIPH_I2S1_MODULE);      // I2S not used
@@ -181,22 +194,42 @@ void disable_unused_peripherals()
     periph_module_disable(PERIPH_UART2_MODULE);     // Not used
     periph_module_disable(PERIPH_SDMMC_MODULE);     // SD card not used
     periph_module_disable(PERIPH_PCNT_MODULE);      // Pulse counter not used
-    periph_module_disable(PERIPH_LEDC_MODULE);      // LED PWM not used
     periph_module_disable(PERIPH_RMT_MODULE);       // Remote control not used
     periph_module_disable(PERIPH_UHCI0_MODULE);     // UHCI not used
     periph_module_disable(PERIPH_UHCI1_MODULE);     // UHCI not used
     
-    serial_log("Unused peripherals disabled for power optimization");
+    // Additional power saving for aggressive mode
+    if (POWER_PROFILE == POWER_PROFILE_AGGRESSIVE) {
+        periph_module_disable(PERIPH_LEDC_MODULE);   // LED PWM not used in aggressive mode
+        serial_log("Unused peripherals disabled for aggressive power optimization");
+    } else if (POWER_PROFILE == POWER_PROFILE_BALANCED) {
+        periph_module_disable(PERIPH_LEDC_MODULE);   // LED PWM not used
+        serial_log("Unused peripherals disabled for balanced power optimization");
+    } else {
+        serial_log("Basic unused peripherals disabled for performance mode");
+    }
 }
 
 /**
  * Enables WiFi power save mode to reduce power consumption during WiFi operations
+ * The aggressiveness of power saving depends on the configured power profile.
  */
 void enable_wifi_power_save()
 {
-    // Enable WiFi power save mode
-    esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
-    serial_log("WiFi power save mode enabled");
+    switch (POWER_PROFILE) {
+        case POWER_PROFILE_AGGRESSIVE:
+            esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
+            serial_log("WiFi aggressive power save mode enabled");
+            break;
+        case POWER_PROFILE_PERFORMANCE:
+            esp_wifi_set_ps(WIFI_PS_NONE);
+            serial_log("WiFi power save disabled for performance mode");
+            break;
+        default: // POWER_PROFILE_BALANCED
+            esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+            serial_log("WiFi balanced power save mode enabled");
+            break;
+    }
 }
 
 /**
@@ -216,22 +249,58 @@ void optimize_adc_power()
  * Prepares the system for deep sleep with comprehensive power optimizations
  * 
  * This function performs additional power optimizations beyond the existing
- * RTC GPIO isolation and WiFi shutdown, including flash power management
- * and brown-out detector optimization.
+ * RTC GPIO isolation and WiFi shutdown. The level of optimization depends
+ * on the configured power profile.
  */
 void prepare_for_deep_sleep()
 {
-    // Configure flash to enter low power mode during deep sleep
+    // Always optimize flash power during deep sleep
     esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_OFF);
     
-    // Configure RTC peripherals for minimal power consumption
-    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
-    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
-    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
+    // Configure RTC peripherals based on power profile
+    if (POWER_PROFILE == POWER_PROFILE_AGGRESSIVE) {
+        // Most aggressive power saving
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_OFF);
+        serial_log("System prepared for aggressive deep sleep optimization");
+    } else if (POWER_PROFILE == POWER_PROFILE_BALANCED) {
+        // Balanced optimization
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_ON);
+        serial_log("System prepared for balanced deep sleep optimization");
+    } else {
+        // Performance mode - minimal deep sleep optimization
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_ON);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_ON);
+        serial_log("System prepared for performance-oriented deep sleep");
+    }
+}
+
+/**
+ * Logs the current power profile configuration for debugging and monitoring
+ */
+void log_power_profile()
+{
+    String profile_name;
+    switch (POWER_PROFILE) {
+        case POWER_PROFILE_AGGRESSIVE:
+            profile_name = "AGGRESSIVE";
+            break;
+        case POWER_PROFILE_PERFORMANCE:
+            profile_name = "PERFORMANCE";
+            break;
+        default:
+            profile_name = "BALANCED";
+            break;
+    }
     
-    // Disable brown-out detector during deep sleep to save power
-    // Note: This should only be done if power supply is stable
-    esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_OFF);
-    
-    serial_log("System prepared for optimized deep sleep");
+    serial_log("Power Profile: " + profile_name + " (" + String(POWER_PROFILE) + ")");
+    serial_log("CPU Frequencies - Low: " + String(
+        POWER_PROFILE == POWER_PROFILE_AGGRESSIVE ? CPU_FREQ_AGGRESSIVE : 
+        POWER_PROFILE == POWER_PROFILE_PERFORMANCE ? 160 : CPU_FREQ_LOW_POWER
+    ) + "MHz, High: " + String(CPU_FREQ_HIGH_PERFORMANCE) + "MHz");
 }
