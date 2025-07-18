@@ -36,6 +36,13 @@ void setup()
     Serial.begin(115200);
     delay(1000);
 
+    serial_log("=== Core Configuration ===");
+    serial_log("Total CPU cores: " + String(ESP.getChipCores()));
+    serial_log("Current core ID: " + String(xPortGetCoreID()));
+    serial_log("FreeRTOS config: " + String(CONFIG_FREERTOS_UNICORE ? "UNICORE" : "MULTICORE"));
+    serial_log("Setup running on core: " + String(xPortGetCoreID()));
+    serial_log("========================");
+
     Wire.begin(21, 22); // SDA, SCL
     connect_to_wifi();
 
