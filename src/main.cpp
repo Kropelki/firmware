@@ -75,8 +75,7 @@ void setup()
     float dew_point_c = calculate_dew_point(temperature_c, humidity);
     float dew_point_f = dew_point_c * 9.0 / 5.0 + 32.0;
 
-    serial_log(
-        "Temperature: " + String(temperature_c, 2) + " °C (" + String(temperature_f, 2) + " °F)");
+    serial_log("Temperature: " + String(temperature_c, 2) + " °C (" + String(temperature_f, 2) + " °F)");
     serial_log("Humidity: " + String(humidity, 1) + " %");
     serial_log("Pressure: " + String(pressure, 2) + " hPa");
     serial_log("Baromin: " + String(baromin, 2) + " inHg");
@@ -86,17 +85,17 @@ void setup()
     serial_log("Solar panel voltage: " + String(solar_panel_voltage, 2) + " V");
 
     unsigned long activeTime = (millis() - startTime) / 1000;
-    send_to_influx_db(temperature_c, humidity, pressure, dew_point_c, illumination, battery_voltage,
-        solar_panel_voltage);
 
-    if (temperature_c != -1000 || humidity != -1000 || pressure != -1000) {
-        if (SEND_TO_WEATHER_UNDERGROUND) {
+    if (temperature_c >= -40 && temperature_c <= 85 && humidity >= 0 && humidity <= 100 && pressure >= 300 && pressure <= 1100) {
+        if (SEND_TO_EXTERNAL_SERVICES) {
             send_to_wunderground(temperature_f, humidity, baromin, dew_point_f);
+            send_to_influx_db(temperature_c, humidity, pressure, dew_point_c, illumination, battery_voltage, solar_panel_voltage);
         } else {
-            serial_log("WeatherUnderground sending is disabled.");
+            serial_log("External services sending is disabled.");
         }
+
     } else {
-        serial_log("Can not send data to WeatherUnderground");
+        serial_log("Can not send data to WeatherUnderground and InfluxDB");
     }
 
     send_log();
