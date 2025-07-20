@@ -51,7 +51,7 @@ void setup()
     if (aht_sensor.begin()) {
         sensors_event_t hum, temp;
         aht_sensor.getEvent(&hum, &temp);
-        measurement.temperature = std::make_unique<float>(temp.temperature);
+        measurement.temperature_c = std::make_unique<float>(temp.temperature);
         measurement.humidity = std::make_unique<float>(hum.relative_humidity);
     } else {
         serial_log("Could not find AHT20!");
@@ -68,12 +68,12 @@ void setup()
     raw = analogRead(BATTERY_VOLTAGE_PIN);
     float battery_voltage = (raw / 4095.0) * 3.3 * voltage_multiplier;
 
-    float temperature_f = *measurement.temperature * 9.0 / 5.0 + 32.0;
+    float temperature_f = *measurement.temperature_c * 9.0 / 5.0 + 32.0;
     float baromin = *measurement.pressure * 0.02953;
-    float dew_point_c = calculate_dew_point(*measurement.temperature, *measurement.humidity);
+    float dew_point_c = calculate_dew_point(*measurement.temperature_c, *measurement.humidity);
     float dew_point_f = dew_point_c * 9.0 / 5.0 + 32.0;
 
-    serial_log("Temperature: " + String(*measurement.temperature, 2) + " °C (" + String(temperature_f, 2) + " °F)");
+    serial_log("Temperature: " + String(*measurement.temperature_c, 2) + " °C (" + String(temperature_f, 2) + " °F)");
     serial_log("Humidity: " + String(*measurement.humidity, 1) + " %");
     serial_log("Pressure: " + String(*measurement.pressure, 2) + " hPa");
     serial_log("Baromin: " + String(baromin, 2) + " inHg");
@@ -88,7 +88,7 @@ void setup()
 
     if (SEND_TO_EXTERNAL_SERVICES) {
         send_to_wunderground(temperature_f, *measurement.humidity, baromin, dew_point_f);
-        send_to_influx_db(*measurement.temperature, *measurement.humidity, *measurement.pressure, dew_point_c, *measurement.illumination, battery_voltage, solar_panel_voltage);
+        send_to_influx_db(*measurement.temperature_c, *measurement.humidity, *measurement.pressure, dew_point_c, *measurement.illumination, battery_voltage, solar_panel_voltage);
     } else {
         serial_log("External services sending is disabled.");
     }

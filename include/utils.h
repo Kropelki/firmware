@@ -12,13 +12,15 @@ extern String log_buffer;
  *
  * This struct holds smart pointers to float values for different weather data.
  * Using std::unique_ptr makes sure the memory is cleaned up automatically.
- * If a pointer is null, it means that the measurement was not taken.
+ * If a pointer is null, it means that the measurement was not taken or is invalid.
  */
 struct Measurement {
-    std::unique_ptr<float> temperature = nullptr;
+    std::unique_ptr<float> temperature_c = nullptr;
+    std::unique_ptr<float> temperature_f = nullptr;
     std::unique_ptr<float> humidity = nullptr;
     std::unique_ptr<float> pressure = nullptr;
-    std::unique_ptr<float> dew_point = nullptr;
+    std::unique_ptr<float> dew_point_c = nullptr;
+    std::unique_ptr<float> dew_point_f = nullptr;
     std::unique_ptr<float> illumination = nullptr;
     std::unique_ptr<float> battery_voltage = nullptr;
     std::unique_ptr<float> solar_panel_voltage = nullptr;

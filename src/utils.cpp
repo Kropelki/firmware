@@ -12,9 +12,9 @@ String log_buffer = "";
 void remove_invalid_measurements(Measurement &measurement)
 {
     // TODO: link to data sheet for each sensor about valid ranges
-    if (measurement.temperature)
-        if (*measurement.temperature < -40 || *measurement.temperature > 85)
-            measurement.temperature = nullptr;
+    if (measurement.temperature_c)
+        if (*measurement.temperature_c < -40 || *measurement.temperature_c > 85)
+            measurement.temperature_c = nullptr;
     if (measurement.humidity)
         if (*measurement.humidity < 0 || *measurement.humidity > 100)
             measurement.humidity = nullptr;
