@@ -71,6 +71,7 @@ void setup()
     measurement.remove_invalid_measurements();
     measurement.calculateDerivedValues();
 
+    // FIX: Ensure that the measurement values are valid before logging
     serial_log("Temperature: " + String(*measurement.temperature_c, 2) + " °C (" + String(*measurement.temperature_f, 2) + " °F)");
     serial_log("Humidity: " + String(*measurement.humidity, 1) + " %");
     serial_log("Pressure: " + String(*measurement.pressure_hpa, 2) + " hPa");
