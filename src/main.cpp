@@ -3,6 +3,7 @@
 #include <BH1750.h>
 #include <WiFi.h>
 #include <Wire.h>
+#include <memory>
 
 #include "env.h"
 #include "influxdb.h"
@@ -39,13 +40,10 @@ void setup()
     Wire.begin(21, 22); // SDA, SCL
     connect_to_wifi();
 
-    float illumination = 0;
-    float temperature_c = -1000;
-    float humidity = -1000;
-    float pressure = -1000;
+    Measurement measurement;
 
     if (bmp_sensor.begin(0x77)) {
-        pressure = bmp_sensor.readPressure() / 100.0;
+        measurement.pressure_hpa = std::make_unique<float>(bmp_sensor.readPressure() / 100.0); // Pa to hPa conversion
     } else {
         serial_log("Could not find BMP280!");
     }
@@ -53,50 +51,43 @@ void setup()
     if (aht_sensor.begin()) {
         sensors_event_t hum, temp;
         aht_sensor.getEvent(&hum, &temp);
-        temperature_c = temp.temperature;
-        humidity = hum.relative_humidity;
+        measurement.temperature_c = std::make_unique<float>(temp.temperature);
+        measurement.humidity = std::make_unique<float>(hum.relative_humidity);
     } else {
         serial_log("Could not find AHT20!");
     }
 
     if (light_meter.begin()) {
-        illumination = light_meter.readLightLevel();
+        measurement.illumination = std::make_unique<float>(light_meter.readLightLevel());
     } else {
         serial_log("Could not find BH1750!");
     }
 
     int raw = analogRead(SOLAR_PANEL_VOLTAGE_PIN);
-    float solar_panel_voltage = (raw / 4095.0) * 3.3 * voltage_multiplier;
+    measurement.solar_panel_voltage = std::make_unique<float>((raw / 4095.0) * 3.3 * voltage_multiplier);
     raw = analogRead(BATTERY_VOLTAGE_PIN);
-    float battery_voltage = (raw / 4095.0) * 3.3 * voltage_multiplier;
+    measurement.battery_voltage = std::make_unique<float>((raw / 4095.0) * 3.3 * voltage_multiplier);
 
-    float temperature_f = temperature_c * 9.0 / 5.0 + 32.0;
-    float baromin = pressure * 0.02953;
-    float dew_point_c = calculate_dew_point(temperature_c, humidity);
-    float dew_point_f = dew_point_c * 9.0 / 5.0 + 32.0;
+    measurement.remove_invalid_measurements();
+    measurement.calculateDerivedValues();
 
-    serial_log(
-        "Temperature: " + String(temperature_c, 2) + " °C (" + String(temperature_f, 2) + " °F)");
-    serial_log("Humidity: " + String(humidity, 1) + " %");
-    serial_log("Pressure: " + String(pressure, 2) + " hPa");
-    serial_log("Baromin: " + String(baromin, 2) + " inHg");
-    serial_log("Dew Point: " + String(dew_point_c, 2) + " °C (" + String(dew_point_f, 2) + " °F)");
-    serial_log("Illumination: " + String(illumination, 1) + " lx");
-    serial_log("Battery voltage: " + String(battery_voltage, 2) + " V");
-    serial_log("Solar panel voltage: " + String(solar_panel_voltage, 2) + " V");
+    // FIX: Ensure that the measurement values are valid before logging
+    serial_log("Temperature: " + String(*measurement.temperature_c, 2) + " °C (" + String(*measurement.temperature_f, 2) + " °F)");
+    serial_log("Humidity: " + String(*measurement.humidity, 1) + " %");
+    serial_log("Pressure: " + String(*measurement.pressure_hpa, 2) + " hPa");
+    serial_log("Baromin: " + String(*measurement.pressure_b, 2) + " inHg");
+    serial_log("Dew Point: " + String(*measurement.dew_point_c, 2) + " °C (" + String(*measurement.dew_point_f, 2) + " °F)");
+    serial_log("Illumination: " + String(*measurement.illumination, 1) + " lx");
+    serial_log("Battery voltage: " + String(*measurement.battery_voltage, 2) + " V");
+    serial_log("Solar panel voltage: " + String(*measurement.solar_panel_voltage, 2) + " V");
 
     unsigned long activeTime = (millis() - startTime) / 1000;
-    send_to_influx_db(temperature_c, humidity, pressure, dew_point_c, illumination, battery_voltage,
-        solar_panel_voltage);
 
-    if (temperature_c != -1000 || humidity != -1000 || pressure != -1000) {
-        if (SEND_TO_WEATHER_UNDERGROUND) {
-            send_to_wunderground(temperature_f, humidity, baromin, dew_point_f);
-        } else {
-            serial_log("WeatherUnderground sending is disabled.");
-        }
+    if (SEND_TO_EXTERNAL_SERVICES) {
+        send_to_wunderground(measurement);
+        send_to_influx_db(measurement);
     } else {
-        serial_log("Can not send data to WeatherUnderground");
+        serial_log("External services sending is disabled.");
     }
 
     send_log();

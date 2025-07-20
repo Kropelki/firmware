@@ -1,6 +1,6 @@
 ---
 Language: Cpp
 BasedOnStyle: WebKit
-ColumnLimit: 100
+ColumnLimit: 132
 
 # TODO: https://clang.llvm.org/docs/ClangFormatStyleOptions.html
