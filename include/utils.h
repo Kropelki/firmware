@@ -14,15 +14,14 @@ extern String log_buffer;
  * Using std::unique_ptr makes sure the memory is cleaned up automatically.
  * If a pointer is null, it means that the measurement was not taken.
  */
-struct Measurement
-{
-    std::unique_ptr<float> temperature;
-    std::unique_ptr<float> humidity;
-    std::unique_ptr<float> pressure;
-    std::unique_ptr<float> dew_point;
-    std::unique_ptr<float> illumination;
-    std::unique_ptr<float> battery_voltage;
-    std::unique_ptr<float> solar_panel_voltage;
+struct Measurement {
+    std::unique_ptr<float> temperature = nullptr;
+    std::unique_ptr<float> humidity = nullptr;
+    std::unique_ptr<float> pressure = nullptr;
+    std::unique_ptr<float> dew_point = nullptr;
+    std::unique_ptr<float> illumination = nullptr;
+    std::unique_ptr<float> battery_voltage = nullptr;
+    std::unique_ptr<float> solar_panel_voltage = nullptr;
 };
 
 /**

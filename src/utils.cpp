@@ -9,17 +9,6 @@
 
 String log_buffer = "";
 
-struct Measurement
-{
-    std::unique_ptr<float> temperature = nullptr;
-    std::unique_ptr<float> humidity = nullptr;
-    std::unique_ptr<float> pressure = nullptr;
-    std::unique_ptr<float> dew_point = nullptr;
-    std::unique_ptr<float> illumination = nullptr;
-    std::unique_ptr<float> battery_voltage = nullptr;
-    std::unique_ptr<float> solar_panel_voltage = nullptr;
-};
-
 void serial_log(String message)
 {
     log_buffer += message + "\n";
