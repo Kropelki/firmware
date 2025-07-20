@@ -37,6 +37,9 @@ void send_to_influx_db(const Measurement& measurement)
         if (measurement.solar_panel_voltage)
             payload += "solar_panel_voltage=" + String(*measurement.solar_panel_voltage, 2);
 
+        if (payload.endsWith(","))
+            payload.remove(payload.length() - 1);
+
         int response_code = http.POST(payload);
         serial_log(payload);
 
