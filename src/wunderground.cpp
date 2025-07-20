@@ -4,7 +4,7 @@
 #include <HTTPClient.h>
 #include <WiFi.h>
 
-void send_to_wunderground(const Measurement &measurement)
+void send_to_wunderground(const Measurement& measurement)
 {
     if (WiFi.status() == WL_CONNECTED) {
         String url = "http://weatherstation.wunderground.com/weatherstation/"
@@ -12,10 +12,14 @@ void send_to_wunderground(const Measurement &measurement)
         url += "?ID=" + String(WEATHER_UNDERGROUND_STATION_ID);
         url += "&PASSWORD=" + String(WEATHER_UNDERGROUND_API_KEY);
         url += "&dateutc=now";
-        if (measurement.temperature_f) url += "&tempf=" + String(*measurement.temperature_f, 2);
-        if (measurement.dew_point_f) url += "&dewptf=" + String(*measurement.dew_point_f, 2);
-        if (measurement.humidity) url += "&humidity=" + String(*measurement.humidity);
-        if (measurement.pressure_b) url += "&baromin=" + String(*measurement.pressure_b, 2);
+        if (measurement.temperature_f)
+            url += "&tempf=" + String(*measurement.temperature_f, 2);
+        if (measurement.dew_point_f)
+            url += "&dewptf=" + String(*measurement.dew_point_f, 2);
+        if (measurement.humidity)
+            url += "&humidity=" + String(*measurement.humidity);
+        if (measurement.pressure_b)
+            url += "&baromin=" + String(*measurement.pressure_b, 2);
         url += "&action=updateraw";
 
         Serial.println("Sending data: " + url);

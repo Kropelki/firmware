@@ -15,6 +15,6 @@
  * @note Requires active WiFi connection. Function will log error if WiFi disconnected.
  * @note Uses InfluxDB API v2 with token-based authentication.
  */
-void send_to_influx_db(Measurement &measurement);
+void send_to_influx_db(const Measurement& measurement);
 
 #endif // INFLUXDB_H

@@ -4,13 +4,12 @@
 #include <HTTPClient.h>
 #include <WiFi.h>
 
-void send_to_influx_db(const Measurement &measurement)
+void send_to_influx_db(const Measurement& measurement)
 {
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
 
-        String request_url = String(INFLUXDB_HOSTNAME) + "/api/v2/write?"
-            + "bucket=" + String(INFLUXDB_BUCKET) + "&precision=ns";
+        String request_url = String(INFLUXDB_HOSTNAME) + "/api/v2/write?" + "bucket=" + String(INFLUXDB_BUCKET) + "&precision=ns";
 
         serial_log("Sending data to InfluxDB...");
 
@@ -23,13 +22,20 @@ void send_to_influx_db(const Measurement &measurement)
 
         // Format: "weather temperature=XX.XX,humidity=XX.X,pressure=XX.XX,..."
         String payload = String("weather ");
-        if (measurement.temperature_c) payload += "temperature=" + String(*measurement.temperature_c, 2) + ",";
-        if (measurement.dew_point_c) payload += "dew_point=" + String(*measurement.dew_point_c, 2) + ",";
-        if (measurement.humidity) payload += "humidity=" + String(*measurement.humidity, 1) + ",";
-        if (measurement.pressure_hpa) payload += "pressure=" + String(*measurement.pressure_hpa, 2) + ",";
-        if (measurement.illumination) payload += "illumination=" + String(*measurement.illumination, 1) + ",";
-        if (measurement.battery_voltage) payload += "battery_voltage=" + String(*measurement.battery_voltage, 2) + ",";
-        if (measurement.solar_panel_voltage) payload += "solar_panel_voltage=" + String(*measurement.solar_panel_voltage, 2);
+        if (measurement.temperature_c)
+            payload += "temperature=" + String(*measurement.temperature_c, 2) + ",";
+        if (measurement.dew_point_c)
+            payload += "dew_point=" + String(*measurement.dew_point_c, 2) + ",";
+        if (measurement.humidity)
+            payload += "humidity=" + String(*measurement.humidity, 1) + ",";
+        if (measurement.pressure_hpa)
+            payload += "pressure=" + String(*measurement.pressure_hpa, 2) + ",";
+        if (measurement.illumination)
+            payload += "illumination=" + String(*measurement.illumination, 1) + ",";
+        if (measurement.battery_voltage)
+            payload += "battery_voltage=" + String(*measurement.battery_voltage, 2) + ",";
+        if (measurement.solar_panel_voltage)
+            payload += "solar_panel_voltage=" + String(*measurement.solar_panel_voltage, 2);
 
         int response_code = http.POST(payload);
         serial_log(payload);

@@ -10,6 +10,6 @@
  * service via HTTP GET request. The data is sent in Fahrenheit units for temperature
  * and dew point, with humidity as percentage and barometric pressure in inches.
  */
-void send_to_wunderground(Measurement &measurement);
+void send_to_wunderground(const Measurement& measurement);
 
 #endif // WUNDERGROUND_H
