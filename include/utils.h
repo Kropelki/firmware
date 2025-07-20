@@ -3,7 +3,27 @@
 
 #include <Arduino.h>
 
+#include <memory>
+
 extern String log_buffer;
+
+/**
+ * Represents a measurement of various weather parameters
+ *
+ * This struct holds smart pointers to float values for different weather data.
+ * Using std::unique_ptr makes sure the memory is cleaned up automatically.
+ * If a pointer is null, it means that the measurement was not taken.
+ */
+struct Measurement
+{
+    std::unique_ptr<float> temperature;
+    std::unique_ptr<float> humidity;
+    std::unique_ptr<float> pressure;
+    std::unique_ptr<float> dew_point;
+    std::unique_ptr<float> illumination;
+    std::unique_ptr<float> battery_voltage;
+    std::unique_ptr<float> solar_panel_voltage;
+};
 
 /**
  * Logs a message to both the serial output and an internal log buffer

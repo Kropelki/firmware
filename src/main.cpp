@@ -39,6 +39,8 @@ void setup()
     Wire.begin(21, 22); // SDA, SCL
     connect_to_wifi();
 
+    Measurement measurement;
+
     float illumination = 0;
     float temperature_c = -1000;
     float humidity = -1000;
