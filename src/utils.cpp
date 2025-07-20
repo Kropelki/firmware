@@ -9,6 +9,23 @@
 
 String log_buffer = "";
 
+void remove_invalid_measurements(Measurement &measurement)
+{
+    // TODO: link to data sheet for each sensor about valid ranges
+    if (measurement.temperature)
+        if (*measurement.temperature < -40 || *measurement.temperature > 85)
+            measurement.temperature = nullptr;
+    if (measurement.humidity)
+        if (*measurement.humidity < 0 || *measurement.humidity > 100)
+            measurement.humidity = nullptr;
+    if (measurement.pressure)
+        if (*measurement.pressure < 300 || *measurement.pressure > 1100)
+            measurement.pressure = nullptr;
+    if (measurement.illumination)
+        if (*measurement.illumination < 0 || *measurement.illumination > 100000)
+            measurement.illumination = nullptr;
+}
+
 void serial_log(String message)
 {
     log_buffer += message + "\n";

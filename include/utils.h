@@ -25,6 +25,11 @@ struct Measurement {
 };
 
 /**
+ * Removes any measurement that is outside sensor's valid range
+ */
+void remove_invalid_measurements(Measurement &measurement);
+
+/**
  * Logs a message to both the serial output and an internal log buffer
  */
 void serial_log(String message);

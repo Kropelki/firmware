@@ -84,16 +84,13 @@ void setup()
 
     unsigned long activeTime = (millis() - startTime) / 1000;
 
-    if (*measurement.temperature >= -40 && *measurement.temperature <= 85 && *measurement.humidity >= 0 && *measurement.humidity <= 100 && *measurement.pressure >= 300 && *measurement.pressure <= 1100) {
-        if (SEND_TO_EXTERNAL_SERVICES) {
-            send_to_wunderground(temperature_f, *measurement.humidity, baromin, dew_point_f);
-            send_to_influx_db(*measurement.temperature, *measurement.humidity, *measurement.pressure, dew_point_c, *measurement.illumination, battery_voltage, solar_panel_voltage);
-        } else {
-            serial_log("External services sending is disabled.");
-        }
+    remove_invalid_measurements(measurement);
 
+    if (SEND_TO_EXTERNAL_SERVICES) {
+        send_to_wunderground(temperature_f, *measurement.humidity, baromin, dew_point_f);
+        send_to_influx_db(*measurement.temperature, *measurement.humidity, *measurement.pressure, dew_point_c, *measurement.illumination, battery_voltage, solar_panel_voltage);
     } else {
-        serial_log("Can not send data to WeatherUnderground and InfluxDB");
+        serial_log("External services sending is disabled.");
     }
 
     send_log();
