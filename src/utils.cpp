@@ -9,21 +9,39 @@
 
 String log_buffer = "";
 
-void remove_invalid_measurements(Measurement &measurement)
+Measurement::Measurement()
+    : temperature_c(nullptr), temperature_f(nullptr), humidity(nullptr), pressure_hpa(nullptr),
+      pressure_b(nullptr), dew_point_c(nullptr), dew_point_f(nullptr), illumination(nullptr), battery_voltage(nullptr),
+      solar_panel_voltage(nullptr) {}
+
+void Measurement::calculateDerivedValues() {
+    if (temperature_c) {
+        temperature_f = std::make_unique<float>(*temperature_c * 9.0f / 5.0f + 32.0f);
+        if (humidity) {
+            dew_point_c = std::make_unique<float>(calculate_dew_point(*temperature_c, *humidity));
+            dew_point_f = std::make_unique<float>(*dew_point_c * 9.0f / 5.0f + 32.0f);
+        }
+    }
+    if (pressure_hpa) {
+        pressure_b = std::make_unique<float>(*pressure_hpa * 0.02953f);
+    }
+}
+
+void Measurement::remove_invalid_measurements()
 {
     // TODO: link to data sheet for each sensor about valid ranges
-    if (measurement.temperature_c)
-        if (*measurement.temperature_c < -40 || *measurement.temperature_c > 85)
-            measurement.temperature_c = nullptr;
-    if (measurement.humidity)
-        if (*measurement.humidity < 0 || *measurement.humidity > 100)
-            measurement.humidity = nullptr;
-    if (measurement.pressure)
-        if (*measurement.pressure < 300 || *measurement.pressure > 1100)
-            measurement.pressure = nullptr;
-    if (measurement.illumination)
-        if (*measurement.illumination < 0 || *measurement.illumination > 100000)
-            measurement.illumination = nullptr;
+    if (temperature_c)
+        if (*temperature_c < -40 || *temperature_c > 85)
+            temperature_c = nullptr;
+    if (humidity)
+        if (*humidity < 0 || *humidity > 100)
+            humidity = nullptr;
+    if (pressure_hpa)
+        if (*pressure_hpa < 300 || *pressure_hpa > 1100)
+            pressure_hpa = nullptr;
+    if (illumination)
+        if (*illumination < 0 || *illumination > 100000)
+            illumination = nullptr;
 }
 
 void serial_log(String message)

@@ -4,8 +4,7 @@
 #include <HTTPClient.h>
 #include <WiFi.h>
 
-void send_to_influx_db(float temperature, float humidity, float pressure, float dew_point,
-    float illumination, float battery_voltage, float solar_panel_voltage)
+void send_to_influx_db(const Measurement &measurement)
 {
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
@@ -23,11 +22,14 @@ void send_to_influx_db(float temperature, float humidity, float pressure, float 
         http.addHeader("Accept", "application/json");
 
         // Format: "weather temperature=XX.XX,humidity=XX.X,pressure=XX.XX,..."
-        String payload = String("weather ") + "temperature=" + String(temperature, 2) + ","
-            + "humidity=" + String(humidity, 1) + "," + "pressure=" + String(pressure, 2) + ","
-            + "illumination=" + String(illumination, 1) + "," + "dew_point=" + String(dew_point, 1)
-            + "," + "battery_voltage=" + String(battery_voltage, 2) + ","
-            + "solar_panel_voltage=" + String(solar_panel_voltage, 2);
+        String payload = String("weather ");
+        if (measurement.temperature_c) payload += "temperature=" + String(*measurement.temperature_c, 2) + ",";
+        if (measurement.dew_point_c) payload += "dew_point=" + String(*measurement.dew_point_c, 2) + ",";
+        if (measurement.humidity) payload += "humidity=" + String(*measurement.humidity, 1) + ",";
+        if (measurement.pressure_hpa) payload += "pressure=" + String(*measurement.pressure_hpa, 2) + ",";
+        if (measurement.illumination) payload += "illumination=" + String(*measurement.illumination, 1) + ",";
+        if (measurement.battery_voltage) payload += "battery_voltage=" + String(*measurement.battery_voltage, 2) + ",";
+        if (measurement.solar_panel_voltage) payload += "solar_panel_voltage=" + String(*measurement.solar_panel_voltage, 2);
 
         int response_code = http.POST(payload);
         serial_log(payload);

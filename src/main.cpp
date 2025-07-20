@@ -43,7 +43,7 @@ void setup()
     Measurement measurement;
 
     if (bmp_sensor.begin(0x77)) {
-        measurement.pressure = std::make_unique<float>(bmp_sensor.readPressure() / 100.0); // Pa to hPa conversion
+        measurement.pressure_hpa = std::make_unique<float>(bmp_sensor.readPressure() / 100.0); // Pa to hPa conversion
     } else {
         serial_log("Could not find BMP280!");
     }
@@ -64,31 +64,27 @@ void setup()
     }
 
     int raw = analogRead(SOLAR_PANEL_VOLTAGE_PIN);
-    float solar_panel_voltage = (raw / 4095.0) * 3.3 * voltage_multiplier;
+    measurement.solar_panel_voltage = std::make_unique<float>((raw / 4095.0) * 3.3 * voltage_multiplier);
     raw = analogRead(BATTERY_VOLTAGE_PIN);
-    float battery_voltage = (raw / 4095.0) * 3.3 * voltage_multiplier;
+    measurement.battery_voltage = std::make_unique<float>((raw / 4095.0) * 3.3 * voltage_multiplier);
 
-    float temperature_f = *measurement.temperature_c * 9.0 / 5.0 + 32.0;
-    float baromin = *measurement.pressure * 0.02953;
-    float dew_point_c = calculate_dew_point(*measurement.temperature_c, *measurement.humidity);
-    float dew_point_f = dew_point_c * 9.0 / 5.0 + 32.0;
+    measurement.remove_invalid_measurements();
+    measurement.calculateDerivedValues();
 
-    serial_log("Temperature: " + String(*measurement.temperature_c, 2) + " °C (" + String(temperature_f, 2) + " °F)");
+    serial_log("Temperature: " + String(*measurement.temperature_c, 2) + " °C (" + String(*measurement.temperature_f, 2) + " °F)");
     serial_log("Humidity: " + String(*measurement.humidity, 1) + " %");
-    serial_log("Pressure: " + String(*measurement.pressure, 2) + " hPa");
-    serial_log("Baromin: " + String(baromin, 2) + " inHg");
-    serial_log("Dew Point: " + String(dew_point_c, 2) + " °C (" + String(dew_point_f, 2) + " °F)");
+    serial_log("Pressure: " + String(*measurement.pressure_hpa, 2) + " hPa");
+    serial_log("Baromin: " + String(*measurement.pressure_b, 2) + " inHg");
+    serial_log("Dew Point: " + String(*measurement.dew_point_c, 2) + " °C (" + String(*measurement.dew_point_f, 2) + " °F)");
     serial_log("Illumination: " + String(*measurement.illumination, 1) + " lx");
-    serial_log("Battery voltage: " + String(battery_voltage, 2) + " V");
-    serial_log("Solar panel voltage: " + String(solar_panel_voltage, 2) + " V");
+    serial_log("Battery voltage: " + String(*measurement.battery_voltage, 2) + " V");
+    serial_log("Solar panel voltage: " + String(*measurement.solar_panel_voltage, 2) + " V");
 
     unsigned long activeTime = (millis() - startTime) / 1000;
 
-    remove_invalid_measurements(measurement);
-
     if (SEND_TO_EXTERNAL_SERVICES) {
-        send_to_wunderground(temperature_f, *measurement.humidity, baromin, dew_point_f);
-        send_to_influx_db(*measurement.temperature_c, *measurement.humidity, *measurement.pressure, dew_point_c, *measurement.illumination, battery_voltage, solar_panel_voltage);
+        send_to_wunderground(measurement);
+        send_to_influx_db(measurement);
     } else {
         serial_log("External services sending is disabled.");
     }
