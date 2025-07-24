@@ -1,6 +1,7 @@
 #ifndef WUNDERGROUND_H
 #define WUNDERGROUND_H
 
+#include "measurement.h"
 #include "utils.h"
 
 /**
