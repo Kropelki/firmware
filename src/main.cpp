@@ -35,7 +35,9 @@ void setup()
     analogSetAttenuation(ADC_11db);
 
     Serial.begin(115200);
-    delay(1000);
+    while (!Serial) {
+        delay(20);
+    }
 
     Wire.begin(21, 22); // SDA, SCL
     connect_to_wifi();

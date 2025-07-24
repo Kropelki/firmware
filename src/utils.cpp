@@ -83,7 +83,7 @@ void connect_to_wifi()
 {
     serial_log("Connecting to WiFi...");
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 50; i++) {
         if (WiFi.status() == WL_CONNECTED) {
             serial_log("\nWiFi connected!");
             serial_log(WiFi.localIP().toString());
@@ -95,7 +95,7 @@ void connect_to_wifi()
             esp_sleep_enable_timer_wakeup(300000000);
             esp_deep_sleep_start();
         }
-        delay(500);
+        delay(200); // 50*200ms gives us max 10s to connect
         serial_log(".");
     }
 
@@ -138,5 +138,6 @@ void send_to_database(float temperature, float humidity, float pressure, float d
     } else {
         serial_log("Error on sending request");
     }
+    delay(10);
     http.end();
 }

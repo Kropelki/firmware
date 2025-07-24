@@ -35,6 +35,7 @@ void send_to_wunderground(const Measurement& measurement)
             Serial.println("Sending error: " + http.errorToString(http_code));
         }
 
+        delay(10);
         http.end();
     } else {
         serial_log("WiFi not connected");

@@ -51,6 +51,7 @@ void send_to_influx_db(const Measurement& measurement)
             serial_log(String(response_code));
         }
 
+        delay(10);
         http.end();
     } else {
         serial_log("WiFi not connected");
