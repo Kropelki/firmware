@@ -71,15 +71,21 @@ void setup()
     measurement.remove_invalid_measurements();
     measurement.calculateDerivedValues();
 
-    // FIX: Ensure that the measurement values are valid before logging
-    serial_log("Temperature: " + String(*measurement.temperature_c, 2) + " °C (" + String(*measurement.temperature_f, 2) + " °F)");
-    serial_log("Humidity: " + String(*measurement.humidity, 1) + " %");
-    serial_log("Pressure: " + String(*measurement.pressure_hpa, 2) + " hPa");
-    serial_log("Baromin: " + String(*measurement.pressure_b, 2) + " inHg");
-    serial_log("Dew Point: " + String(*measurement.dew_point_c, 2) + " °C (" + String(*measurement.dew_point_f, 2) + " °F)");
-    serial_log("Illumination: " + String(*measurement.illumination, 1) + " lx");
-    serial_log("Battery voltage: " + String(*measurement.battery_voltage, 2) + " V");
-    serial_log("Solar panel voltage: " + String(*measurement.solar_panel_voltage, 2) + " V");
+    if (measurement.temperature_c)
+        serial_log(
+            "Temperature: " + String(*measurement.temperature_c, 2) + " °C (" + String(*measurement.temperature_f, 2) + " °F)");
+    if (measurement.humidity)
+        serial_log("Humidity: " + String(*measurement.humidity, 1) + " %");
+    if (measurement.pressure_hpa)
+        serial_log("Pressure: " + String(*measurement.pressure_hpa, 2) + " hPa (" + String(*measurement.pressure_b, 2) + " inHg)");
+    if (measurement.dew_point_c)
+        serial_log("Dew Point: " + String(*measurement.dew_point_c, 2) + " °C (" + String(*measurement.dew_point_f, 2) + " °F)");
+    if (measurement.illumination)
+        serial_log("Illumination: " + String(*measurement.illumination, 1) + " lx");
+    if (measurement.battery_voltage)
+        serial_log("Battery voltage: " + String(*measurement.battery_voltage, 2) + " V");
+    if (measurement.solar_panel_voltage)
+        serial_log("Solar panel voltage: " + String(*measurement.solar_panel_voltage, 2) + " V");
 
     unsigned long activeTime = (millis() - startTime) / 1000;
 
