@@ -1,6 +1,7 @@
 #ifndef INFLUXDB_H
 #define INFLUXDB_H
 
+#include "measurement.h"
 #include "utils.h"
 
 /**

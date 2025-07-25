@@ -9,69 +9,10 @@
 
 String log_buffer = "";
 
-Measurement::Measurement()
-    : temperature_c(nullptr)
-    , temperature_f(nullptr)
-    , humidity(nullptr)
-    , pressure_hpa(nullptr)
-    , pressure_b(nullptr)
-    , dew_point_c(nullptr)
-    , dew_point_f(nullptr)
-    , illumination(nullptr)
-    , battery_voltage(nullptr)
-    , solar_panel_voltage(nullptr)
-{
-}
-
-void Measurement::calculateDerivedValues()
-{
-    if (temperature_c) {
-        temperature_f = std::make_unique<float>(*temperature_c * 9.0f / 5.0f + 32.0f);
-        if (humidity) {
-            dew_point_c = std::make_unique<float>(calculate_dew_point(*temperature_c, *humidity));
-            dew_point_f = std::make_unique<float>(*dew_point_c * 9.0f / 5.0f + 32.0f);
-        }
-    }
-    if (pressure_hpa) {
-        pressure_b = std::make_unique<float>(*pressure_hpa * 0.02953f);
-    }
-}
-
-void Measurement::remove_invalid_measurements()
-{
-    // TODO: link to data sheet for each sensor about valid ranges
-    if (temperature_c)
-        if (*temperature_c < -40 || *temperature_c > 85)
-            temperature_c = nullptr;
-    if (humidity)
-        if (*humidity < 0 || *humidity > 100)
-            humidity = nullptr;
-    if (pressure_hpa)
-        if (*pressure_hpa < 300 || *pressure_hpa > 1100)
-            pressure_hpa = nullptr;
-    if (illumination)
-        if (*illumination < 0 || *illumination > 100000)
-            illumination = nullptr;
-}
-
-bool Measurement::hasSensorData() const
-{
-    // we generally don't want to send data if we don't have at least one sensor reading
-    return temperature_c != nullptr || humidity != nullptr || pressure_hpa != nullptr || illumination != nullptr;
-}
-
 void serial_log(String message)
 {
     log_buffer += message + "\n";
     Serial.println(message);
-}
-
-float calculate_dew_point(float temperature, float humidity)
-{
-    const float b = 17.62;
-    const float c = 243.12;
-    float alpha = ((b * temperature) / (c + temperature)) + log(humidity / 100.0);
-    return (c * alpha) / (b - alpha);
 }
 
 void isolate_all_rtc_gpio()

@@ -1,4 +1,6 @@
+#include "wunderground.h"
 #include "env.h"
+#include "measurement.h"
 #include "utils.h"
 
 #include <HTTPClient.h>

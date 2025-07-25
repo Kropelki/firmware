@@ -3,54 +3,12 @@
 
 #include <Arduino.h>
 
-#include <memory>
-
 extern String log_buffer;
-
-/**
- * Represents a measurement of various weather parameters
- *
- * This struct holds smart pointers to float values for different weather data.
- * Using std::unique_ptr makes sure the memory is cleaned up automatically.
- * If a pointer is null, it means that the measurement was not taken or is invalid.
- */
-struct Measurement {
-    std::unique_ptr<float> temperature_c;
-    std::unique_ptr<float> temperature_f;
-    std::unique_ptr<float> humidity;
-    std::unique_ptr<float> pressure_hpa;
-    std::unique_ptr<float> pressure_b;
-    std::unique_ptr<float> dew_point_c;
-    std::unique_ptr<float> dew_point_f;
-    std::unique_ptr<float> illumination;
-    std::unique_ptr<float> battery_voltage;
-    std::unique_ptr<float> solar_panel_voltage;
-
-    Measurement();
-    void calculateDerivedValues();
-    void remove_invalid_measurements();
-    bool hasSensorData() const;
-};
 
 /**
  * Logs a message to both the serial output and an internal log buffer
  */
 void serial_log(String message);
-
-/**
- * Calculates the dew point temperature from temperature and humidity
- *
- * Uses the Magnus formula to calculate the dew point temperature. The dew point is the temperature
- * the air needs to be cooled to (at constant pressure) in order to produce a relative humidity of
- * 100%.
- *
- * Reference: https://en.wikipedia.org/wiki/Dew_point
- *
- * @param temperature Temperature in degrees Celsius
- * @param humidity Relative humidity as a percentage (0-100)
- * @return Dew point temperature in degrees Celsius
- */
-float calculate_dew_point(float temperature, float humidity);
 
 /**
  * Isolates all RTC-capable GPIO pins to reduce power consumption

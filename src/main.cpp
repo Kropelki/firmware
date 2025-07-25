@@ -7,6 +7,7 @@
 
 #include "env.h"
 #include "influxdb.h"
+#include "measurement.h"
 #include "utils.h"
 #include "wunderground.h"
 
