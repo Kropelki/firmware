@@ -29,6 +29,7 @@ struct Measurement {
     Measurement();
     void calculateDerivedValues();
     void remove_invalid_measurements();
+    bool hasSensorData() const;
 };
 
 /**

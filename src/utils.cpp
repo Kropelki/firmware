@@ -54,6 +54,12 @@ void Measurement::remove_invalid_measurements()
             illumination = nullptr;
 }
 
+bool Measurement::hasSensorData() const
+{
+    // we generally don't want to send data if we don't have at least one sensor reading
+    return temperature_c != nullptr || humidity != nullptr || pressure_hpa != nullptr || illumination != nullptr;
+}
+
 void serial_log(String message)
 {
     log_buffer += message + "\n";

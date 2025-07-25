@@ -92,8 +92,12 @@ void setup()
     unsigned long activeTime = (millis() - startTime) / 1000;
 
     if (SEND_TO_EXTERNAL_SERVICES) {
-        send_to_wunderground(measurement);
-        send_to_influx_db(measurement);
+        if (measurement.hasSensorData()) {
+            send_to_wunderground(measurement);
+            send_to_influx_db(measurement);
+        } else {
+            serial_log("No sensor data available - skipping external services.");
+        }
     } else {
         serial_log("External services sending is disabled.");
     }
