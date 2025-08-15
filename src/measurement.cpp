@@ -33,7 +33,14 @@ void Measurement::calculateDerivedValues()
 
 void Measurement::remove_invalid_measurements()
 {
-    // TODO: link to data sheet for each sensor about valid ranges
+    /*
+        BMP280 (pressure):
+            https://www.alldatasheet.com/datasheet-pdf/view/1132069/BOSCH/BMP280.html
+        AHT20 (temperature and humidity):
+            https://static.maritex.eu/file/display/RNvX5GenZti93oVcmXPk9n_PKbFzX2F0/AHT20.pdf
+        BH1750 (illumination):
+            https://www.handsontec.com/dataspecs/sensor/BH1750%20Light%20Sensor.pdf
+    */
     if (temperature_c)
         if (*temperature_c < -40 || *temperature_c > 85)
             temperature_c = nullptr;
@@ -44,7 +51,7 @@ void Measurement::remove_invalid_measurements()
         if (*pressure_hpa < 300 || *pressure_hpa > 1100)
             pressure_hpa = nullptr;
     if (illumination)
-        if (*illumination < 0 || *illumination > 100000)
+        if (*illumination < 0 || *illumination > 65535)
             illumination = nullptr;
 }
 
