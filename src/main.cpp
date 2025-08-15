@@ -108,11 +108,11 @@ void setup()
     isolate_all_rtc_gpio();
     WiFi.mode(WIFI_OFF);
 
-    unsigned long sleepTime = (activeTime < CYCLE_TIME_SEC) ? ((CYCLE_TIME_SEC - activeTime) * 1000000)
-                                                            : (CYCLE_TIME_SEC * 1000000); // ensure we don't get huge sleep times
-    serial_log("Entering deep sleep for " + String(sleepTime / 1000000) + " seconds...");
+    unsigned long sleepTime = (activeTime < CYCLE_TIME_SEC) ? ((CYCLE_TIME_SEC - activeTime))
+                                                            : (CYCLE_TIME_SEC); // ensure we don't get huge sleep times
+    serial_log("Entering deep sleep for " + String(sleepTime) + " seconds...");
 
-    esp_sleep_enable_timer_wakeup(sleepTime);
+    esp_sleep_enable_timer_wakeup(sleepTime * 1000000); // convert to microseconds
     esp_deep_sleep_start();
 }
 
