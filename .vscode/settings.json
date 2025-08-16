@@ -3,4 +3,14 @@
         "editor.tabSize": 4,
         "editor.insertSpaces": false
     },
+    "files.exclude": {
+        "**/.env": true,
+        "**/.env.*": true,
+        "**/env.h": true
+    },
+    "search.exclude": {
+        "**/.env": true,
+        "**/.env.*": true,
+        "**/env.h": true
+    }
 }
