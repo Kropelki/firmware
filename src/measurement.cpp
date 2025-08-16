@@ -90,6 +90,24 @@ bool Measurement::hasSensorData() const
     return temperature_c != nullptr || humidity != nullptr || pressure_hpa != nullptr || illumination != nullptr;
 }
 
+void Measurement::printAllValues() const
+{
+    if (temperature_c)
+        serial_log("Temperature: " + String(*temperature_c, 2) + " °C (" + String(*temperature_f, 2) + " °F)");
+    if (humidity)
+        serial_log("Humidity: " + String(*humidity, 1) + " %");
+    if (pressure_hpa)
+        serial_log("Pressure: " + String(*pressure_hpa, 2) + " hPa (" + String(*pressure_b, 2) + " inHg)");
+    if (dew_point_c)
+        serial_log("Dew Point: " + String(*dew_point_c, 2) + " °C (" + String(*dew_point_f, 2) + " °F)");
+    if (illumination)
+        serial_log("Illumination: " + String(*illumination, 1) + " lx");
+    if (battery_voltage)
+        serial_log("Battery voltage: " + String(*battery_voltage, 2) + " V");
+    if (solar_panel_voltage)
+        serial_log("Solar panel voltage: " + String(*solar_panel_voltage, 2) + " V");
+}
+
 /**
  * Calculates the dew point temperature from temperature and humidity
  *

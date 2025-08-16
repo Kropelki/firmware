@@ -31,6 +31,7 @@ struct Measurement {
         int solar_panel_voltage_pin, int battery_voltage_pin, float voltage_multiplier);
     void remove_invalid_measurements();
     void calculateDerivedValues();
+    void printAllValues() const;
     bool hasSensorData() const;
 };
 
