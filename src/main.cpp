@@ -44,33 +44,8 @@ void setup()
     connect_to_wifi();
 
     Measurement measurement;
-
-    if (bmp_sensor.begin(0x77)) {
-        measurement.pressure_hpa = std::make_unique<float>(bmp_sensor.readPressure() / 100.0); // Pa to hPa conversion
-    } else {
-        serial_log("Could not find BMP280!");
-    }
-
-    if (aht_sensor.begin()) {
-        sensors_event_t hum, temp;
-        aht_sensor.getEvent(&hum, &temp);
-        measurement.temperature_c = std::make_unique<float>(temp.temperature);
-        measurement.humidity = std::make_unique<float>(hum.relative_humidity);
-    } else {
-        serial_log("Could not find AHT20!");
-    }
-
-    if (light_meter.begin()) {
-        measurement.illumination = std::make_unique<float>(light_meter.readLightLevel());
-    } else {
-        serial_log("Could not find BH1750!");
-    }
-
-    int raw = analogRead(SOLAR_PANEL_VOLTAGE_PIN);
-    measurement.solar_panel_voltage = std::make_unique<float>((raw / 4095.0) * 3.3 * voltage_multiplier);
-    raw = analogRead(BATTERY_VOLTAGE_PIN);
-    measurement.battery_voltage = std::make_unique<float>((raw / 4095.0) * 3.3 * voltage_multiplier);
-
+    measurement.read_sensors_and_voltage(
+        bmp_sensor, aht_sensor, light_meter, SOLAR_PANEL_VOLTAGE_PIN, BATTERY_VOLTAGE_PIN, voltage_multiplier);
     measurement.remove_invalid_measurements();
     measurement.calculateDerivedValues();
 

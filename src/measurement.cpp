@@ -1,5 +1,7 @@
-#include "measurement.h"
 #include <math.h>
+
+#include "measurement.h"
+#include "utils.h"
 
 static float calculate_dew_point(float temperature, float humidity);
 
@@ -15,6 +17,33 @@ Measurement::Measurement()
     , battery_voltage(nullptr)
     , solar_panel_voltage(nullptr)
 {
+}
+
+void Measurement::read_sensors_and_voltage(Adafruit_BMP280& bmp_sensor, Adafruit_AHTX0& aht_sensor, BH1750& light_meter,
+    int solar_panel_voltage_pin, int battery_voltage_pin, float voltage_multiplier)
+{
+    if (bmp_sensor.begin(0x77))
+        pressure_hpa = std::make_unique<float>(bmp_sensor.readPressure() / 100.0); // Pa to hPa conversion
+    else
+        serial_log("Could not find BMP280!");
+
+    if (aht_sensor.begin()) {
+        sensors_event_t hum, temp;
+        aht_sensor.getEvent(&hum, &temp);
+        temperature_c = std::make_unique<float>(temp.temperature);
+        humidity = std::make_unique<float>(hum.relative_humidity);
+    } else
+        serial_log("Could not find AHT20!");
+
+    if (light_meter.begin())
+        illumination = std::make_unique<float>(light_meter.readLightLevel());
+    else
+        serial_log("Could not find BH1750!");
+
+    int adc_value = analogRead(solar_panel_voltage_pin);
+    solar_panel_voltage = std::make_unique<float>((adc_value / 4095.0) * 3.3 * voltage_multiplier);
+    adc_value = analogRead(battery_voltage_pin);
+    battery_voltage = std::make_unique<float>((adc_value / 4095.0) * 3.3 * voltage_multiplier);
 }
 
 void Measurement::calculateDerivedValues()

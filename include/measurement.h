@@ -1,6 +1,10 @@
 #ifndef MEASUREMENT_H
 #define MEASUREMENT_H
 
+#include <Adafruit_AHTX0.h>
+#include <Adafruit_BMP280.h>
+#include <BH1750.h>
+
 #include <memory>
 
 /**
@@ -23,6 +27,8 @@ struct Measurement {
     std::unique_ptr<float> solar_panel_voltage;
 
     Measurement();
+    void read_sensors_and_voltage(Adafruit_BMP280& bmp_sensor, Adafruit_AHTX0& aht_sensor, BH1750& light_meter,
+        int solar_panel_voltage_pin, int battery_voltage_pin, float voltage_multiplier);
     void calculateDerivedValues();
     void remove_invalid_measurements();
     bool hasSensorData() const;
