@@ -46,20 +46,6 @@ void Measurement::read_sensors_and_voltage(Adafruit_BMP280& bmp_sensor, Adafruit
     battery_voltage = std::make_unique<float>((adc_value / 4095.0) * 3.3 * voltage_multiplier);
 }
 
-void Measurement::calculateDerivedValues()
-{
-    if (temperature_c) {
-        temperature_f = std::make_unique<float>(*temperature_c * 9.0f / 5.0f + 32.0f);
-        if (humidity) {
-            dew_point_c = std::make_unique<float>(calculate_dew_point(*temperature_c, *humidity));
-            dew_point_f = std::make_unique<float>(*dew_point_c * 9.0f / 5.0f + 32.0f);
-        }
-    }
-    if (pressure_hpa) {
-        pressure_b = std::make_unique<float>(*pressure_hpa * 0.02953f);
-    }
-}
-
 void Measurement::remove_invalid_measurements()
 {
     /*
@@ -82,6 +68,20 @@ void Measurement::remove_invalid_measurements()
     if (illumination)
         if (*illumination < 0 || *illumination > 65535)
             illumination = nullptr;
+}
+
+void Measurement::calculateDerivedValues()
+{
+    if (temperature_c) {
+        temperature_f = std::make_unique<float>(*temperature_c * 9.0f / 5.0f + 32.0f);
+        if (humidity) {
+            dew_point_c = std::make_unique<float>(calculate_dew_point(*temperature_c, *humidity));
+            dew_point_f = std::make_unique<float>(*dew_point_c * 9.0f / 5.0f + 32.0f);
+        }
+    }
+    if (pressure_hpa) {
+        pressure_b = std::make_unique<float>(*pressure_hpa * 0.02953f);
+    }
 }
 
 bool Measurement::hasSensorData() const
