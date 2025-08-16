@@ -18,10 +18,6 @@ const float voltage_multiplier = 3.2;
 #define SOLAR_PANEL_VOLTAGE_PIN 35
 #define BATTERY_VOLTAGE_PIN 34
 
-Adafruit_BMP280 bmp_sensor; // BMP280: measures pressure
-Adafruit_AHTX0 aht_sensor; // AHT20: measures temperature and humidity
-BH1750 light_meter; // BH1750: measures illumination
-
 void setup()
 {
     unsigned long startTime = millis();
@@ -43,7 +39,11 @@ void setup()
     Wire.begin(21, 22); // SDA, SCL
     connect_to_wifi();
 
-    Measurement measurement;
+    Adafruit_BMP280 bmp_sensor; // BMP280: measures pressure
+    Adafruit_AHTX0 aht_sensor; // AHT20: measures temperature and humidity
+    BH1750 light_meter; // BH1750: measures illumination
+    Measurement measurement; // holds all sensor data
+
     measurement.read_sensors_and_voltage(
         bmp_sensor, aht_sensor, light_meter, SOLAR_PANEL_VOLTAGE_PIN, BATTERY_VOLTAGE_PIN, voltage_multiplier);
     measurement.remove_invalid_measurements();
