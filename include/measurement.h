@@ -30,9 +30,9 @@ struct Measurement {
     void read_sensors_and_voltage(Adafruit_BMP280& bmp_sensor, Adafruit_AHTX0& aht_sensor, BH1750& light_meter,
         int solar_panel_voltage_pin, int battery_voltage_pin, float voltage_multiplier);
     void remove_invalid_measurements();
-    void calculateDerivedValues();
-    void printAllValues() const;
-    bool hasSensorData() const;
+    void calculate_derived_values();
+    void print_all_values() const;
+    bool has_sensor_data() const;
 };
 
 #endif // MEASUREMENT_H

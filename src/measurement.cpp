@@ -70,7 +70,7 @@ void Measurement::remove_invalid_measurements()
             illumination = nullptr;
 }
 
-void Measurement::calculateDerivedValues()
+void Measurement::calculate_derived_values()
 {
     if (temperature_c) {
         temperature_f = std::make_unique<float>(*temperature_c * 9.0f / 5.0f + 32.0f);
@@ -84,13 +84,13 @@ void Measurement::calculateDerivedValues()
     }
 }
 
-bool Measurement::hasSensorData() const
+bool Measurement::has_sensor_data() const
 {
     // we generally don't want to send data if we don't have at least one sensor reading
     return temperature_c != nullptr || humidity != nullptr || pressure_hpa != nullptr || illumination != nullptr;
 }
 
-void Measurement::printAllValues() const
+void Measurement::print_all_values() const
 {
     if (temperature_c)
         serial_log("Temperature: " + String(*temperature_c, 2) + " °C (" + String(*temperature_f, 2) + " °F)");

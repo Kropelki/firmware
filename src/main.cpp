@@ -47,13 +47,13 @@ void setup()
     measurement.read_sensors_and_voltage(
         bmp_sensor, aht_sensor, light_meter, SOLAR_PANEL_VOLTAGE_PIN, BATTERY_VOLTAGE_PIN, voltage_multiplier);
     measurement.remove_invalid_measurements();
-    measurement.calculateDerivedValues();
-    measurement.printAllValues();
+    measurement.calculate_derived_values();
+    measurement.print_all_values();
 
     unsigned long activeTime = (millis() - startTime) / 1000;
 
     if (SEND_TO_EXTERNAL_SERVICES) {
-        if (measurement.hasSensorData()) {
+        if (measurement.has_sensor_data()) {
             send_to_wunderground(measurement);
             send_to_influx_db(measurement);
         } else {
