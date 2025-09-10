@@ -11,7 +11,7 @@ void send_to_influx_db(const Measurement& measurement)
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
 
-        String request_url = String(INFLUXDB_HOSTNAME) + "/api/v2/write?" + "bucket=" + String(INFLUXDB_BUCKET) + "&precision=ns";
+        String request_url = String(INFLUXDB_HOSTNAME) + "/api/v2/write?" + "bucket=" + String(INFLUXDB_BUCKET) + "&precision=s";
 
         serial_log("Sending data to InfluxDB...");
 
