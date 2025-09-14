@@ -22,6 +22,8 @@ void send_to_wunderground(const Measurement& measurement)
             url += "&humidity=" + String(*measurement.humidity);
         if (measurement.pressure_b)
             url += "&baromin=" + String(*measurement.pressure_b, 2);
+        if (measurement.uv_index)
+            url += "&UV=" + String(*measurement.uv_index);
         url += "&action=updateraw";
 
         Serial.println("Sending data: " + url);

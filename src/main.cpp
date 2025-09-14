@@ -1,3 +1,4 @@
+#include <Adafruit_ADS1X15.h>
 #include <Adafruit_AHTX0.h>
 #include <Adafruit_BMP280.h>
 #include <BH1750.h>
@@ -11,22 +12,15 @@
 #include "utils.h"
 #include "wunderground.h"
 
-const float voltage_multiplier = 3.2;
-
-#define BMP280_AHT20_PIN 12
-#define BH1750_PIN 14
-#define SOLAR_PANEL_VOLTAGE_PIN 35
-#define BATTERY_VOLTAGE_PIN 34
+#define MOSFET_PIN 12
 
 void setup()
 {
     unsigned long startTime = millis();
     btStop();
 
-    pinMode(BMP280_AHT20_PIN, OUTPUT);
-    pinMode(BH1750_PIN, OUTPUT);
-    digitalWrite(BMP280_AHT20_PIN, HIGH);
-    digitalWrite(BH1750_PIN, HIGH);
+    pinMode(MOSFET_PIN, OUTPUT);
+    digitalWrite(MOSFET_PIN, HIGH);
 
     analogReadResolution(12);
     analogSetAttenuation(ADC_11db);
@@ -39,13 +33,13 @@ void setup()
     Wire.begin(21, 22); // SDA, SCL
     connect_to_wifi();
 
-    Adafruit_BMP280 bmp_sensor; // BMP280: measures pressure
+    Adafruit_ADS1115 ads_sensor; // ADS1115: measures analog inputs
     Adafruit_AHTX0 aht_sensor; // AHT20: measures temperature and humidity
+    Adafruit_BMP280 bmp_sensor; // BMP280: measures pressure
     BH1750 light_meter; // BH1750: measures illumination
     Measurement measurement; // holds all sensor data
 
-    measurement.read_sensors_and_voltage(
-        bmp_sensor, aht_sensor, light_meter, SOLAR_PANEL_VOLTAGE_PIN, BATTERY_VOLTAGE_PIN, voltage_multiplier);
+    measurement.read_sensors_and_voltage(bmp_sensor, aht_sensor, light_meter, ads_sensor);
     measurement.remove_invalid_measurements();
     measurement.calculate_derived_values();
     measurement.print_all_values();
