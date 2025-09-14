@@ -37,10 +37,11 @@ void Measurement::read_sensors_and_voltage(
     } else
         serial_log("Could not find AHT20!");
 
-    if (light_meter.begin())
-        illumination = std::make_unique<float>(light_meter.readLightLevel());
-    else
-        serial_log("Could not find BH1750!");
+    // TODOFIX: the sensor does not work
+    // if (light_meter.begin())
+    //     illumination = std::make_unique<float>(light_meter.readLightLevel());
+    // else
+    //     serial_log("Could not find BH1750!");
 
     if (ads_sensor.begin()) {
         // GAIN_ONE: +/-4.096V range (for battery and solar panel voltage)
@@ -57,15 +58,15 @@ void Measurement::read_sensors_and_voltage(
         int16_t adc2 = ads_sensor.readADC_SingleEnded(2);
         float voltage2 = ads_sensor.computeVolts(adc2);
 
-        battery_voltage_a0 = std::make_unique<float>((voltage0 * 1.33) + 0.03); // +0.03V calibration offset
-        solar_panel_voltage_a1 = std::make_unique<float>(voltage1 * 2.43);
-        uv_voltage_a2 = std::make_unique<float>(voltage2);
+        // When there's no signal or very weak signal,
+        // ADCs can return small negative values like -0.0, -0.001, etc.
+        float corrected_voltage0 = max(0.0f, voltage0);
+        float corrected_voltage1 = max(0.0f, voltage1);
+        float corrected_voltage2 = max(0.0f, voltage2);
 
-        if (voltage2 >= 0.0) {
-            float calculated_uv_index = voltage2 * 11.0;
-            calculated_uv_index = max(0.0f, min(calculated_uv_index, 12.0f));
-            uv_index = std::make_unique<int>(round(calculated_uv_index));
-        }
+        battery_voltage_a0 = std::make_unique<float>((corrected_voltage0 * 1.33) + 0.03); // +0.03V calibration offset
+        solar_panel_voltage_a1 = std::make_unique<float>(corrected_voltage1 * 2.43);
+        uv_voltage_a2 = std::make_unique<float>(corrected_voltage2);
     } else {
         serial_log("Could not find ADS1115!");
     }
@@ -93,9 +94,6 @@ void Measurement::remove_invalid_measurements()
     if (illumination)
         if (*illumination < 0 || *illumination > 65535)
             illumination = nullptr;
-    if (uv_voltage_a2) // TODO: add source?
-        if (*uv_voltage_a2 < 0 || *uv_voltage_a2 > 1)
-            uv_voltage_a2 = nullptr;
 }
 
 void Measurement::calculate_derived_values()
@@ -109,6 +107,11 @@ void Measurement::calculate_derived_values()
     }
     if (pressure_hpa) {
         pressure_b = std::make_unique<float>(*pressure_hpa * 0.02953f);
+    }
+    if (uv_voltage_a2) {
+        float calculated_uv_index = (*uv_voltage_a2) * 10.0;
+        calculated_uv_index = max(0.0f, min(calculated_uv_index, 12.0f));
+        uv_index = std::make_unique<int>(round(calculated_uv_index));
     }
 }
 
