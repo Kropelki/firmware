@@ -34,10 +34,12 @@ void send_to_influx_db(const Measurement& measurement)
             payload += "pressure=" + String(*measurement.pressure_hpa, 2) + ",";
         if (measurement.illumination)
             payload += "illumination=" + String(*measurement.illumination, 1) + ",";
-        if (measurement.battery_voltage)
-            payload += "battery_voltage=" + String(*measurement.battery_voltage, 2) + ",";
-        if (measurement.solar_panel_voltage)
-            payload += "solar_panel_voltage=" + String(*measurement.solar_panel_voltage, 2);
+        if (measurement.battery_voltage_a0)
+            payload += "battery_voltage=" + String(*measurement.battery_voltage_a0, 2) + ",";
+        if (measurement.solar_panel_voltage_a1)
+            payload += "solar_panel_voltage=" + String(*measurement.solar_panel_voltage_a1, 2) + ",";
+        if (measurement.uv_voltage_a2)
+            payload += "uv_voltage=" + String(*measurement.uv_voltage_a2, 2);
 
         if (payload.endsWith(","))
             payload.remove(payload.length() - 1);

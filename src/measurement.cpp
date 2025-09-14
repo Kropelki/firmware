@@ -14,13 +14,15 @@ Measurement::Measurement()
     , dew_point_c(nullptr)
     , dew_point_f(nullptr)
     , illumination(nullptr)
-    , battery_voltage(nullptr)
-    , solar_panel_voltage(nullptr)
+    , battery_voltage_a0(nullptr)
+    , solar_panel_voltage_a1(nullptr)
+    , uv_voltage_a2(nullptr)
+    , uv_index(nullptr)
 {
 }
 
-void Measurement::read_sensors_and_voltage(Adafruit_BMP280& bmp_sensor, Adafruit_AHTX0& aht_sensor, BH1750& light_meter,
-    int solar_panel_voltage_pin, int battery_voltage_pin, float voltage_multiplier)
+void Measurement::read_sensors_and_voltage(
+    Adafruit_BMP280& bmp_sensor, Adafruit_AHTX0& aht_sensor, BH1750& light_meter, Adafruit_ADS1115& ads_sensor)
 {
     if (bmp_sensor.begin(0x77))
         pressure_hpa = std::make_unique<float>(bmp_sensor.readPressure() / 100.0); // Pa to hPa conversion
@@ -40,10 +42,33 @@ void Measurement::read_sensors_and_voltage(Adafruit_BMP280& bmp_sensor, Adafruit
     else
         serial_log("Could not find BH1750!");
 
-    int adc_value = analogRead(solar_panel_voltage_pin);
-    solar_panel_voltage = std::make_unique<float>((adc_value / 4095.0) * 3.3 * voltage_multiplier);
-    adc_value = analogRead(battery_voltage_pin);
-    battery_voltage = std::make_unique<float>((adc_value / 4095.0) * 3.3 * voltage_multiplier);
+    if (ads_sensor.begin()) {
+        // GAIN_ONE: +/-4.096V range (for battery and solar panel voltage)
+        ads_sensor.setGain(GAIN_ONE);
+
+        int16_t adc0 = ads_sensor.readADC_SingleEnded(0);
+        int16_t adc1 = ads_sensor.readADC_SingleEnded(1);
+        float voltage0 = ads_sensor.computeVolts(adc0);
+        float voltage1 = ads_sensor.computeVolts(adc1);
+
+        // GAIN_FOUR: +/-1.024V range (for UV sensor voltage)
+        ads_sensor.setGain(GAIN_FOUR);
+
+        int16_t adc2 = ads_sensor.readADC_SingleEnded(2);
+        float voltage2 = ads_sensor.computeVolts(adc2);
+
+        battery_voltage_a0 = std::make_unique<float>((voltage0 * 1.33) + 0.03); // +0.03V calibration offset
+        solar_panel_voltage_a1 = std::make_unique<float>(voltage1 * 2.43);
+        uv_voltage_a2 = std::make_unique<float>(voltage2);
+
+        if (voltage2 >= 0.0) {
+            float calculated_uv_index = voltage2 * 11.0;
+            calculated_uv_index = max(0.0f, min(calculated_uv_index, 12.0f));
+            uv_index = std::make_unique<int>(round(calculated_uv_index));
+        }
+    } else {
+        serial_log("Could not find ADS1115!");
+    }
 }
 
 void Measurement::remove_invalid_measurements()
@@ -68,6 +93,9 @@ void Measurement::remove_invalid_measurements()
     if (illumination)
         if (*illumination < 0 || *illumination > 65535)
             illumination = nullptr;
+    if (uv_voltage_a2) // TODO: add source?
+        if (*uv_voltage_a2 < 0 || *uv_voltage_a2 > 1)
+            uv_voltage_a2 = nullptr;
 }
 
 void Measurement::calculate_derived_values()
@@ -102,10 +130,14 @@ void Measurement::print_all_values() const
         serial_log("Dew Point: " + String(*dew_point_c, 2) + " °C (" + String(*dew_point_f, 2) + " °F)");
     if (illumination)
         serial_log("Illumination: " + String(*illumination, 1) + " lx");
-    if (battery_voltage)
-        serial_log("Battery voltage: " + String(*battery_voltage, 2) + " V");
-    if (solar_panel_voltage)
-        serial_log("Solar panel voltage: " + String(*solar_panel_voltage, 2) + " V");
+    if (battery_voltage_a0)
+        serial_log("Battery voltage: " + String(*battery_voltage_a0, 2) + " V");
+    if (solar_panel_voltage_a1)
+        serial_log("Solar panel voltage: " + String(*solar_panel_voltage_a1, 2) + " V");
+    if (uv_voltage_a2)
+        serial_log("UV voltage: " + String(*uv_voltage_a2, 2) + " V");
+    if (uv_index)
+        serial_log("UV Index: " + String(*uv_index));
 }
 
 /**
