@@ -12,7 +12,7 @@
 #include "utils.h"
 #include "wunderground.h"
 
-#define MOSFET_PIN 12
+#define MOSFET_PIN 13
 
 void setup()
 {
@@ -59,6 +59,7 @@ void setup()
 
     send_log();
 
+    // digitalWrite(MOSFET_PIN, LOW);
     isolate_all_rtc_gpio();
     WiFi.mode(WIFI_OFF);
 

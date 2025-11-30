@@ -37,11 +37,11 @@ void Measurement::read_sensors_and_voltage(
     } else
         serial_log("Could not find AHT20!");
 
-    // TODOFIX: the sensor does not work
-    // if (light_meter.begin())
-    //     illumination = std::make_unique<float>(light_meter.readLightLevel());
-    // else
-    //     serial_log("Could not find BH1750!");
+    if (light_meter.begin()) {
+        delay(200);  // important
+        illumination = std::make_unique<float>(light_meter.readLightLevel());
+    } else
+        serial_log("Could not find BH1750!");
 
     if (ads_sensor.begin()) {
         // GAIN_ONE: +/-4.096V range (for battery and solar panel voltage)
