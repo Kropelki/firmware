@@ -31,7 +31,6 @@ void setup()
     }
 
     Wire.begin(21, 22); // SDA, SCL
-    connect_to_wifi();
 
     Adafruit_ADS1115 ads_sensor; // ADS1115: measures analog inputs
     Adafruit_AHTX0 aht_sensor; // AHT20: measures temperature and humidity
@@ -46,6 +45,7 @@ void setup()
 
     unsigned long activeTime = (millis() - startTime) / 1000;
 
+	connect_to_wifi();
     if (SEND_TO_EXTERNAL_SERVICES) {
         if (measurement.has_sensor_data()) {
             send_to_wunderground(measurement);
