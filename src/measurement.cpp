@@ -271,6 +271,17 @@ static bool read_sps30_data(SensirionI2cSps30& sps30_sensor, Measurement& measur
             continue;
         }
 
+		if (SPS30_DEBUG_VALUES) {
+			serial_log("----------------------------------------");
+			serial_log("SPS30: sample " + String(i + 1) + " values:");
+			serial_log("  MC PM1.0: " + String(mc_pm1_0) + " ug/m3");
+			serial_log("  MC PM2.5: " + String(mc_pm2_5) + " ug/m3");
+			serial_log("  MC PM10.0: " + String(mc_pm10_0) + " ug/m3");
+			serial_log("  NC PM2.5: " + String(nc_pm2_5) + " #/cm3");
+			serial_log("  Typical particle size: " + String(typical_particle_size_um) + " um");
+			serial_log("----------------------------------------");
+		}
+
         sum_mc_pm1_0 += mc_pm1_0;
         sum_mc_pm2_5 += mc_pm2_5;
         sum_mc_pm10_0 += mc_pm10_0;
