@@ -230,11 +230,19 @@ static bool read_sps30_data(SensirionI2cSps30& sps30_sensor, Measurement& measur
 {
     sps30_sensor.begin(Wire, SPS30_I2C_ADDR_69);
 
-    if (sps30_sensor.stopMeasurement() != 0)
+    int16_t wakeup_error = sps30_sensor.wakeUpSequence();
+    if (wakeup_error != 0) {
+        serial_log("SPS30: wakeUpSequence failed with error " + String(wakeup_error) + ".");
+        return false;
+    }
+
+    int16_t stop_error = sps30_sensor.stopMeasurement();
+    if (stop_error != 0)
         serial_log("SPS30: stopMeasurement returned non-zero (continuing).");
 
-    if (sps30_sensor.startMeasurement(SPS30_OUTPUT_FORMAT_OUTPUT_FORMAT_UINT16) != 0) {
-        serial_log("SPS30: startMeasurement failed.");
+    int16_t start_error = sps30_sensor.startMeasurement(SPS30_OUTPUT_FORMAT_OUTPUT_FORMAT_UINT16);
+    if (start_error != 0) {
+        serial_log("SPS30: startMeasurement failed with error " + String(start_error) + ".");
         return false;
     }
 
@@ -252,42 +260,49 @@ static bool read_sps30_data(SensirionI2cSps30& sps30_sensor, Measurement& measur
         delay(SPS30_SAMPLING_INTERVAL_S * 1000);
 
         uint16_t data_ready_flag = 0;
-        if (sps30_sensor.readDataReadyFlag(data_ready_flag) != 0) {
-            serial_log("SPS30: failed for sample " + String(i + 1) + ".");
+        int16_t data_ready_error = sps30_sensor.readDataReadyFlag(data_ready_flag);
+        if (data_ready_error != 0) {
+            serial_log("SPS30: readDataReadyFlag failed for sample " + String(i + 1) + " with error " + String(data_ready_error) + ".");
             continue;
         }
 
         if (data_ready_flag == 0) {
             serial_log("SPS30: data not ready for sample " + String(i + 1) + ".");
-			serial_log("SPS30: (currently we still count this as a valid reading)");
-			// TODO: consider whether we want to count this as a valid reading or not
-        }
-
-        uint16_t mc_pm1_0 = 0;
-        uint16_t mc_pm2_5 = 0;
-        uint16_t mc_pm10_0 = 0;
-        uint16_t nc_pm2_5 = 0;
-        uint16_t typical_particle_size_um = 0;
-		uint16_t _dont_care = 0; // values we don't care about for now
-
-        if (sps30_sensor.readMeasurementValuesUint16(
-                mc_pm1_0,
-                mc_pm2_5,
-                _dont_care, // mc_pm4_0
-                mc_pm10_0,
-                _dont_care, // nc_pm0_5
-                _dont_care, // nc_pm1_0
-                nc_pm2_5,
-                _dont_care, // nc_pm4_0
-                _dont_care, // nc_pm10_0
-                typical_particle_size_um) != 0) {
-            serial_log("SPS30: read failed for sample " + String(i + 1) + ".");
             continue;
         }
 
+        uint16_t mc_pm1_0_raw = 0;
+        uint16_t mc_pm2_5_raw = 0;
+        uint16_t mc_pm10_0_raw = 0;
+        uint16_t nc_pm2_5_raw = 0;
+        uint16_t typical_particle_size_raw = 0;
+        uint16_t ignored_raw = 0;
+
+        int16_t read_error = sps30_sensor.readMeasurementValuesUint16(
+                mc_pm1_0_raw,
+                mc_pm2_5_raw,
+				ignored_raw, // mc_pm4_0
+                mc_pm10_0_raw,
+				ignored_raw, // nc_pm0_5
+				ignored_raw, // nc_pm1_0
+                nc_pm2_5_raw,
+				ignored_raw, // nc_pm4_0
+				ignored_raw, // nc_pm10_0
+                typical_particle_size_raw);
+        if (read_error != 0) {
+			serial_log("SPS30: readMeasurementValuesUint16 failed for sample " + String(i + 1) + " with error " + String(read_error) + ".");
+            continue;
+        }
+
+        const float mc_pm1_0 = static_cast<float>(mc_pm1_0_raw) / 10.0f;
+        const float mc_pm2_5 = static_cast<float>(mc_pm2_5_raw) / 10.0f;
+        const float mc_pm10_0 = static_cast<float>(mc_pm10_0_raw) / 10.0f;
+        const float nc_pm2_5 = static_cast<float>(nc_pm2_5_raw) / 10.0f;
+        const float typical_particle_size_um = static_cast<float>(typical_particle_size_raw) / 10.0f;
+
 		if (SPS30_DEBUG_VALUES) {
 			serial_log("----------------------------------------");
-			serial_log("SPS30: sample " + String(i + 1) + " values:");
+            serial_log("SPS30: sample " + String(i + 1) + " values (scaled):");
 			serial_log("  MC PM1.0: " + String(mc_pm1_0) + " ug/m3");
 			serial_log("  MC PM2.5: " + String(mc_pm2_5) + " ug/m3");
 			serial_log("  MC PM10.0: " + String(mc_pm10_0) + " ug/m3");
