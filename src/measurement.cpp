@@ -119,6 +119,8 @@ void Measurement::remove_invalid_measurements()
             https://static.maritex.eu/file/display/RNvX5GenZti93oVcmXPk9n_PKbFzX2F0/AHT20.pdf
         BH1750 (illumination):
             https://www.handsontec.com/dataspecs/sensor/BH1750%20Light%20Sensor.pdf
+		SPS30 (particulate matter):
+			https://sensirion.com/media/documents/8600FF88/64A3B8D6/Sensirion_PM_Sensors_Datasheet_SPS30.pdf
     */
     if (temperature_c)
         if (*temperature_c < -40 || *temperature_c > 85)
@@ -132,6 +134,18 @@ void Measurement::remove_invalid_measurements()
     if (illumination)
         if (*illumination < 0 || *illumination > 65535)
             illumination = nullptr;
+    if (mc_pm1_0)
+        if (*mc_pm1_0 > 1000)
+            mc_pm1_0 = nullptr;
+    if (mc_pm2_5)
+        if (*mc_pm2_5 > 1000)
+            mc_pm2_5 = nullptr;
+    if (mc_pm10_0)
+        if (*mc_pm10_0 > 1000)
+            mc_pm10_0 = nullptr;
+    if (nc_pm2_5)
+        if (*nc_pm2_5 > 3000)
+            nc_pm2_5 = nullptr;
 }
 
 void Measurement::calculate_derived_values()
