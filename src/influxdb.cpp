@@ -39,7 +39,17 @@ void send_to_influx_db(const Measurement& measurement)
         if (measurement.solar_panel_voltage_a1)
             payload += "solar_panel_voltage=" + String(*measurement.solar_panel_voltage_a1, 2) + ",";
         if (measurement.uv_voltage_a2)
-            payload += "uv_voltage=" + String(*measurement.uv_voltage_a2, 2);
+            payload += "uv_voltage=" + String(*measurement.uv_voltage_a2, 2) + ",";
+        if (measurement.mc_pm1_0)
+            payload += "mc_pm1_0=" + String(*measurement.mc_pm1_0) + ",";
+        if (measurement.mc_pm2_5)
+            payload += "mc_pm2_5=" + String(*measurement.mc_pm2_5) + ",";
+        if (measurement.mc_pm10_0)
+            payload += "mc_pm10_0=" + String(*measurement.mc_pm10_0) + ",";
+        if (measurement.nc_pm2_5)
+            payload += "nc_pm2_5=" + String(*measurement.nc_pm2_5) + ",";
+        if (measurement.typical_particle_size_um)
+            payload += "typical_particle_size_um=" + String(*measurement.typical_particle_size_um) + ",";
 
         if (payload.endsWith(","))
             payload.remove(payload.length() - 1);

@@ -1,9 +1,22 @@
 #include <math.h>
+#include <Wire.h>
 
+#include "env.h"
 #include "measurement.h"
 #include "utils.h"
 
+/**
+ * SPS30 sensor seems to be power-hungry and needs a long startup time,
+ * so we only want to measure with it every N cycles.
+ * We use RTC_DATA_ATTR to retain the cycle count across deep sleep cycles,
+ * so we can keep track of when to measure with the SPS30 sensor again.
+ *
+ * https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/deep-sleep-stub.html#load-wake-stub-data-into-rtc-memory
+ */
+RTC_DATA_ATTR uint8_t cycles_since_sps30 = SPS30_MEASUREMENT_INTERVAL_CYCLES;
+
 static float calculate_dew_point(float temperature, float humidity);
+static bool read_sps30_data(SensirionI2cSps30& sps30_sensor, Measurement& measurement);
 
 Measurement::Measurement()
     : temperature_c(nullptr)
@@ -18,12 +31,37 @@ Measurement::Measurement()
     , solar_panel_voltage_a1(nullptr)
     , uv_voltage_a2(nullptr)
     , uv_index(nullptr)
+	, mc_pm1_0(nullptr)
+	, mc_pm2_5(nullptr)
+	, mc_pm10_0(nullptr)
+	, typical_particle_size_um(nullptr)
+	, nc_pm2_5(nullptr)
 {
 }
 
 void Measurement::read_sensors_and_voltage(
-    Adafruit_BMP280& bmp_sensor, Adafruit_AHTX0& aht_sensor, BH1750& light_meter, Adafruit_ADS1115& ads_sensor)
+    Adafruit_BMP280& bmp_sensor,
+    Adafruit_AHTX0& aht_sensor,
+    BH1750& light_meter,
+    Adafruit_ADS1115& ads_sensor,
+    SensirionI2cSps30& sps30_sensor)
 {
+	if (cycles_since_sps30 >= SPS30_MEASUREMENT_INTERVAL_CYCLES) {
+		if (!read_sps30_data(sps30_sensor, *this))
+			serial_log("Failed to read SPS30 data.");
+		/**
+		 * We actually want to update the count regardless of whether we
+		 * successfully read from the sensor or not, because even if the
+		 * reading fails, we still want to have a cooldown period before the
+		 * next attempt to read from the sensor, to avoid draining the battery
+		 * with repeated failed attempts.
+		 */
+		cycles_since_sps30 = 0;
+	} else {
+		cycles_since_sps30++;
+		serial_log("SPS30: skipping this cycle (scheduled interval).");
+	}
+
     if (bmp_sensor.begin(0x77))
         pressure_hpa = std::make_unique<float>(bmp_sensor.readPressure() / 100.0); // Pa to hPa conversion
     else
@@ -118,7 +156,7 @@ void Measurement::calculate_derived_values()
 bool Measurement::has_sensor_data() const
 {
     // we generally don't want to send data if we don't have at least one sensor reading
-    return temperature_c != nullptr || humidity != nullptr || pressure_hpa != nullptr || illumination != nullptr;
+    return temperature_c != nullptr || humidity != nullptr || pressure_hpa != nullptr || illumination != nullptr || mc_pm2_5 != nullptr;
 }
 
 void Measurement::print_all_values() const
@@ -141,6 +179,16 @@ void Measurement::print_all_values() const
         serial_log("UV voltage: " + String(*uv_voltage_a2, 2) + " V");
     if (uv_index)
         serial_log("UV Index: " + String(*uv_index));
+    if (mc_pm1_0)
+        serial_log("MC PM1.0: " + String(*mc_pm1_0) + " ug/m3");
+    if (mc_pm2_5)
+        serial_log("MC PM2.5: " + String(*mc_pm2_5) + " ug/m3");
+    if (mc_pm10_0)
+        serial_log("MC PM10.0: " + String(*mc_pm10_0) + " ug/m3");
+    if (nc_pm2_5)
+        serial_log("NC PM2.5: " + String(*nc_pm2_5) + " #/cm3");
+    if (typical_particle_size_um)
+        serial_log("Typical particle size: " + String(*typical_particle_size_um) + " um");
 }
 
 /**
@@ -162,4 +210,101 @@ static float calculate_dew_point(float temperature, float humidity)
     const float c = 243.12;
     float alpha = ((b * temperature) / (c + temperature)) + log(humidity / 100.0);
     return (c * alpha) / (b - alpha);
+}
+
+static bool read_sps30_data(SensirionI2cSps30& sps30_sensor, Measurement& measurement)
+{
+    sps30_sensor.begin(Wire, SPS30_I2C_ADDR_69);
+
+    if (sps30_sensor.stopMeasurement() != 0)
+        serial_log("SPS30: stopMeasurement returned non-zero (continuing).");
+
+    if (sps30_sensor.startMeasurement(SPS30_OUTPUT_FORMAT_OUTPUT_FORMAT_UINT16) != 0) {
+        serial_log("SPS30: startMeasurement failed.");
+        return false;
+    }
+
+    serial_log("SPS30: waiting " + String(SPS30_STARTUP_TIME_S) + "s startup stabilization time...");
+    delay(SPS30_STARTUP_TIME_S * 1000);
+
+    float sum_mc_pm1_0 = 0.0f;
+    float sum_mc_pm2_5 = 0.0f;
+    float sum_mc_pm10_0 = 0.0f;
+    float sum_nc_pm2_5 = 0.0f;
+    float sum_typical_particle_size_um = 0.0f;
+    uint8_t valid_readings = 0;
+
+    for (uint8_t i = 0; i < SPS30_NUM_READINGS; ++i) {
+        delay(SPS30_SAMPLING_INTERVAL_S * 1000);
+
+        uint16_t data_ready_flag = 0;
+        if (sps30_sensor.readDataReadyFlag(data_ready_flag) != 0) {
+            serial_log("SPS30: failed for sample " + String(i + 1) + ".");
+            continue;
+        }
+
+        if (data_ready_flag == 0) {
+            serial_log("SPS30: data not ready for sample " + String(i + 1) + ".");
+			serial_log("SPS30: (currently we still count this as a valid reading)");
+			// TODO: consider whether we want to count this as a valid reading or not
+        }
+
+        uint16_t mc_pm1_0 = 0;
+        uint16_t mc_pm2_5 = 0;
+        uint16_t mc_pm10_0 = 0;
+        uint16_t nc_pm2_5 = 0;
+        uint16_t typical_particle_size_um = 0;
+		uint16_t _dont_care = 0; // values we don't care about for now
+
+        if (sps30_sensor.readMeasurementValuesUint16(
+                mc_pm1_0,
+                mc_pm2_5,
+                _dont_care, // mc_pm4_0
+                mc_pm10_0,
+                _dont_care, // nc_pm0_5
+                _dont_care, // nc_pm1_0
+                nc_pm2_5,
+                _dont_care, // nc_pm4_0
+                _dont_care, // nc_pm10_0
+                typical_particle_size_um) != 0) {
+            serial_log("SPS30: read failed for sample " + String(i + 1) + ".");
+            continue;
+        }
+
+        sum_mc_pm1_0 += mc_pm1_0;
+        sum_mc_pm2_5 += mc_pm2_5;
+        sum_mc_pm10_0 += mc_pm10_0;
+        sum_nc_pm2_5 += nc_pm2_5;
+        sum_typical_particle_size_um += typical_particle_size_um;
+        ++valid_readings;
+    }
+
+    if (sps30_sensor.stopMeasurement() != 0)
+        serial_log("SPS30: stopMeasurement failed after sampling.");
+    if (sps30_sensor.sleep() != 0)
+        serial_log("SPS30: sleep command failed.");
+
+    if (valid_readings == 0) {
+        serial_log("SPS30: no valid readings collected.");
+        return false;
+    }
+
+	auto assign_rounded_avg = [valid_readings](
+		std::unique_ptr<uint16_t>& target,
+		float sum)
+	{
+		target = std::make_unique<uint16_t>(
+			static_cast<uint16_t>(round(sum / valid_readings))
+		);
+	};
+
+	assign_rounded_avg(measurement.mc_pm1_0, sum_mc_pm1_0);
+	assign_rounded_avg(measurement.mc_pm2_5, sum_mc_pm2_5);
+	assign_rounded_avg(measurement.mc_pm10_0, sum_mc_pm10_0);
+	assign_rounded_avg(measurement.nc_pm2_5, sum_nc_pm2_5);
+	assign_rounded_avg(measurement.typical_particle_size_um,
+		sum_typical_particle_size_um);
+
+    serial_log("SPS30: averaged " + String(valid_readings) + " valid readings.");
+    return true;
 }
