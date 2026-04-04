@@ -2,6 +2,7 @@
 #include <Adafruit_AHTX0.h>
 #include <Adafruit_BMP280.h>
 #include <BH1750.h>
+#include <SensirionI2cSps30.h>
 #include <WiFi.h>
 #include <Wire.h>
 #include <memory>
@@ -31,21 +32,28 @@ void setup()
     }
 
     Wire.begin(21, 22); // SDA, SCL
-    connect_to_wifi();
 
     Adafruit_ADS1115 ads_sensor; // ADS1115: measures analog inputs
     Adafruit_AHTX0 aht_sensor; // AHT20: measures temperature and humidity
     Adafruit_BMP280 bmp_sensor; // BMP280: measures pressure
     BH1750 light_meter; // BH1750: measures illumination
+	SensirionI2cSps30 sps30_sensor; // SPS30: measures particulate matter
     Measurement measurement; // holds all sensor data
 
-    measurement.read_sensors_and_voltage(bmp_sensor, aht_sensor, light_meter, ads_sensor);
+    measurement.read_sensors_and_voltage(
+		bmp_sensor,
+		aht_sensor,
+		light_meter,
+		ads_sensor,
+		sps30_sensor
+	);
     measurement.remove_invalid_measurements();
     measurement.calculate_derived_values();
     measurement.print_all_values();
 
     unsigned long activeTime = (millis() - startTime) / 1000;
 
+	connect_to_wifi();
     if (SEND_TO_EXTERNAL_SERVICES) {
         if (measurement.has_sensor_data()) {
             send_to_wunderground(measurement);
