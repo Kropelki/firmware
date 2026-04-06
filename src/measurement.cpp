@@ -5,6 +5,11 @@
 #include "measurement.h"
 #include "utils.h"
 
+#ifdef NO_ERROR
+#undef NO_ERROR
+#endif
+#define NO_ERROR 0
+
 /**
  * SPS30 sensor seems to be power-hungry and needs a long startup time,
  * so we only want to measure with it every N cycles.
@@ -34,7 +39,7 @@ Measurement::Measurement()
 	, mc_pm1_0(nullptr)
 	, mc_pm2_5(nullptr)
 	, mc_pm10_0(nullptr)
-	, typical_particle_size_um(nullptr)
+	, typical_particle_size(nullptr)
 	, nc_pm2_5(nullptr)
 {
 }
@@ -194,15 +199,15 @@ void Measurement::print_all_values() const
     if (uv_index)
         serial_log("UV Index: " + String(*uv_index));
     if (mc_pm1_0)
-        serial_log("MC PM1.0: " + String(*mc_pm1_0) + " ug/m3");
+        serial_log("MC PM1.0: " + String(*mc_pm1_0, 2) + " ug/m3");
     if (mc_pm2_5)
-        serial_log("MC PM2.5: " + String(*mc_pm2_5) + " ug/m3");
+        serial_log("MC PM2.5: " + String(*mc_pm2_5, 2) + " ug/m3");
     if (mc_pm10_0)
-        serial_log("MC PM10.0: " + String(*mc_pm10_0) + " ug/m3");
+        serial_log("MC PM10.0: " + String(*mc_pm10_0, 2) + " ug/m3");
     if (nc_pm2_5)
-        serial_log("NC PM2.5: " + String(*nc_pm2_5) + " #/cm3");
-    if (typical_particle_size_um)
-        serial_log("Typical particle size: " + String(*typical_particle_size_um) + " um");
+        serial_log("NC PM2.5: " + String(*nc_pm2_5, 2) + " #/cm3");
+    if (typical_particle_size)
+        serial_log("Typical particle size: " + String(*typical_particle_size, 2) + " um");
 }
 
 /**
@@ -239,83 +244,85 @@ static bool read_sps30_data(SensirionI2cSps30& sps30_sensor, Measurement& measur
     int16_t stop_error = sps30_sensor.stopMeasurement();
     if (stop_error != 0)
         serial_log("SPS30: stopMeasurement returned non-zero (continuing).");
+	delay(100);
 
-    int16_t start_error = sps30_sensor.startMeasurement(SPS30_OUTPUT_FORMAT_OUTPUT_FORMAT_UINT16);
+	// TODO: printSPS30diagnostics(sps30_sensor);
+
+    int16_t start_error = sps30_sensor.startMeasurement(SPS30_OUTPUT_FORMAT_OUTPUT_FORMAT_FLOAT);
     if (start_error != 0) {
         serial_log("SPS30: startMeasurement failed with error " + String(start_error) + ".");
         return false;
     }
 
+	// TODO: sensor cleaning every ~5 days:
+	// SPS30_CLEANING_TIME_S = 16
+	// sps30_sensor.startFanCleaning();
+	// delay(SPS30_CLEANING_TIME_S * 1000);
+
     serial_log("SPS30: waiting " + String(SPS30_STARTUP_TIME_S) + "s startup stabilization time...");
     delay(SPS30_STARTUP_TIME_S * 1000);
 
+	uint16_t data_ready_flag = 0;
+    uint8_t valid_readings = 0;
     float sum_mc_pm1_0 = 0.0f;
     float sum_mc_pm2_5 = 0.0f;
     float sum_mc_pm10_0 = 0.0f;
     float sum_nc_pm2_5 = 0.0f;
-    float sum_typical_particle_size_um = 0.0f;
-    uint8_t valid_readings = 0;
+    float sum_typical_particle_size = 0.0f;
 
     for (uint8_t i = 0; i < SPS30_NUM_READINGS; ++i) {
         delay(SPS30_SAMPLING_INTERVAL_S * 1000);
 
-        uint16_t data_ready_flag = 0;
         int16_t data_ready_error = sps30_sensor.readDataReadyFlag(data_ready_flag);
-        if (data_ready_error != 0) {
+        if (data_ready_error != NO_ERROR) {
             serial_log("SPS30: readDataReadyFlag failed for sample " + String(i + 1) + " with error " + String(data_ready_error) + ".");
             continue;
         }
 
-        if (data_ready_flag == 0) {
+        if (data_ready_flag != 1) {
             serial_log("SPS30: data not ready for sample " + String(i + 1) + ".");
             continue;
         }
 
-        uint16_t mc_pm1_0_raw = 0;
-        uint16_t mc_pm2_5_raw = 0;
-        uint16_t mc_pm10_0_raw = 0;
-        uint16_t nc_pm2_5_raw = 0;
-        uint16_t typical_particle_size_raw = 0;
-        uint16_t ignored_raw = 0;
+        float raw_mc_pm1_0 = 0;
+        float raw_mc_pm2_5 = 0;
+        float raw_mc_pm10_0 = 0;
+        float raw_nc_pm2_5 = 0;
+        float raw_typical_particle_size = 0;
+        float raw_ignored = 0;
 
-        int16_t read_error = sps30_sensor.readMeasurementValuesUint16(
-                mc_pm1_0_raw,
-                mc_pm2_5_raw,
-				ignored_raw, // mc_pm4_0
-                mc_pm10_0_raw,
-				ignored_raw, // nc_pm0_5
-				ignored_raw, // nc_pm1_0
-                nc_pm2_5_raw,
-				ignored_raw, // nc_pm4_0
-				ignored_raw, // nc_pm10_0
-                typical_particle_size_raw);
-        if (read_error != 0) {
-			serial_log("SPS30: readMeasurementValuesUint16 failed for sample " + String(i + 1) + " with error " + String(read_error) + ".");
+        int16_t read_error = sps30_sensor.readMeasurementValuesFloat(
+                raw_mc_pm1_0,
+                raw_mc_pm2_5,
+				raw_ignored, // mc_pm4_0
+                raw_mc_pm10_0,
+				raw_ignored, // nc_pm0_5
+				raw_ignored, // nc_pm1_0
+                raw_nc_pm2_5,
+				raw_ignored, // nc_pm4_0
+				raw_ignored, // nc_pm10_0
+                raw_typical_particle_size);
+        if (read_error != NO_ERROR) {
+			serial_log("SPS30: readMeasurementValuesFloat failed for sample " + String(i + 1) + " with error " + String(read_error) + ".");
             continue;
         }
 
-        const float mc_pm1_0 = static_cast<float>(mc_pm1_0_raw) / 10.0f;
-        const float mc_pm2_5 = static_cast<float>(mc_pm2_5_raw) / 10.0f;
-        const float mc_pm10_0 = static_cast<float>(mc_pm10_0_raw) / 10.0f;
-        const float nc_pm2_5 = static_cast<float>(nc_pm2_5_raw) / 10.0f;
-        const float typical_particle_size_um = static_cast<float>(typical_particle_size_raw) / 10.0f;
-
 		if (SPS30_DEBUG_VALUES) {
 			serial_log("----------------------------------------");
-            serial_log("SPS30: sample " + String(i + 1) + " values (scaled):");
-			serial_log("  MC PM1.0: " + String(mc_pm1_0) + " ug/m3");
-			serial_log("  MC PM2.5: " + String(mc_pm2_5) + " ug/m3");
-			serial_log("  MC PM10.0: " + String(mc_pm10_0) + " ug/m3");
-			serial_log("  NC PM2.5: " + String(nc_pm2_5) + " #/cm3");
-			serial_log("  Typical particle size: " + String(typical_particle_size_um) + " um");
+            serial_log("SPS30: sample " + String(i + 1) + " values:");
+			serial_log("  MC PM1.0: " + String(raw_mc_pm1_0) + " ug/m3");
+			serial_log("  MC PM2.5: " + String(raw_mc_pm2_5) + " ug/m3");
+			serial_log("  MC PM10.0: " + String(raw_mc_pm10_0) + " ug/m3");
+			serial_log("  NC PM2.5: " + String(raw_nc_pm2_5) + " #/cm3");
+			serial_log("  Typical particle size: " + String(raw_typical_particle_size) + " um");
 			serial_log("----------------------------------------");
 		}
 
-        sum_mc_pm1_0 += mc_pm1_0;
-        sum_mc_pm2_5 += mc_pm2_5;
-        sum_mc_pm10_0 += mc_pm10_0;
-        sum_nc_pm2_5 += nc_pm2_5;
-        sum_typical_particle_size_um += typical_particle_size_um;
+        sum_mc_pm1_0 += raw_mc_pm1_0;
+        sum_mc_pm2_5 += raw_mc_pm2_5;
+        sum_mc_pm10_0 += raw_mc_pm10_0;
+        sum_nc_pm2_5 += raw_nc_pm2_5;
+        sum_typical_particle_size += raw_typical_particle_size;
         ++valid_readings;
     }
 
@@ -329,21 +336,20 @@ static bool read_sps30_data(SensirionI2cSps30& sps30_sensor, Measurement& measur
         return false;
     }
 
-	auto assign_rounded_avg = [valid_readings](
-		std::unique_ptr<uint16_t>& target,
-		float sum)
-	{
-		target = std::make_unique<uint16_t>(
-			static_cast<uint16_t>(round(sum / valid_readings))
-		);
-	};
+	measurement.mc_pm1_0 = std::make_unique<float>(sum_mc_pm1_0 / valid_readings);
+	measurement.mc_pm2_5 = std::make_unique<float>(sum_mc_pm2_5 / valid_readings);
+	measurement.mc_pm10_0 = std::make_unique<float>(sum_mc_pm10_0 / valid_readings);
+	measurement.nc_pm2_5 = std::make_unique<float>(sum_nc_pm2_5 / valid_readings);
+	measurement.typical_particle_size = std::make_unique<float>(sum_typical_particle_size / valid_readings);
 
-	assign_rounded_avg(measurement.mc_pm1_0, sum_mc_pm1_0);
-	assign_rounded_avg(measurement.mc_pm2_5, sum_mc_pm2_5);
-	assign_rounded_avg(measurement.mc_pm10_0, sum_mc_pm10_0);
-	assign_rounded_avg(measurement.nc_pm2_5, sum_nc_pm2_5);
-	assign_rounded_avg(measurement.typical_particle_size_um,
-		sum_typical_particle_size_um);
+	if(SPS30_DEBUG_VALUES) {
+		serial_log("SPS30: averaged values:");
+		serial_log("  MC PM1.0: " + String(*measurement.mc_pm1_0) + " ug/m3");
+		serial_log("  MC PM2.5: " + String(*measurement.mc_pm2_5) + " ug/m3");
+		serial_log("  MC PM10.0: " + String(*measurement.mc_pm10_0) + " ug/m3");
+		serial_log("  NC PM2.5: " + String(*measurement.nc_pm2_5) + " #/cm3");
+		serial_log("  Typical particle size: " + String(*measurement.typical_particle_size) + " um");
+	}
 
     serial_log("SPS30: averaged " + String(valid_readings) + " valid readings.");
     return true;

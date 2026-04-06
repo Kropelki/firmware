@@ -29,11 +29,11 @@ struct Measurement {
     std::unique_ptr<float> solar_panel_voltage_a1;
     std::unique_ptr<float> uv_voltage_a2;
     std::unique_ptr<int> uv_index;
-	std::unique_ptr<uint16_t> mc_pm1_0;
-	std::unique_ptr<uint16_t> mc_pm2_5;
-	std::unique_ptr<uint16_t> mc_pm10_0;
-	std::unique_ptr<uint16_t> nc_pm2_5;
-	std::unique_ptr<uint16_t> typical_particle_size_um;
+	std::unique_ptr<float> mc_pm1_0;
+	std::unique_ptr<float> mc_pm2_5;
+	std::unique_ptr<float> mc_pm10_0;
+	std::unique_ptr<float> nc_pm2_5;
+	std::unique_ptr<float> typical_particle_size;
 
     Measurement();
     void read_sensors_and_voltage(

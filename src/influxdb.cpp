@@ -41,15 +41,15 @@ void send_to_influx_db(const Measurement& measurement)
         if (measurement.uv_voltage_a2)
             payload += "uv_voltage=" + String(*measurement.uv_voltage_a2, 2) + ",";
         if (measurement.mc_pm1_0)
-            payload += "mc_pm1_0=" + String(*measurement.mc_pm1_0) + ",";
+            payload += "mc_pm1_0=" + String(*measurement.mc_pm1_0, 2) + ",";
         if (measurement.mc_pm2_5)
-            payload += "mc_pm2_5=" + String(*measurement.mc_pm2_5) + ",";
+            payload += "mc_pm2_5=" + String(*measurement.mc_pm2_5, 2) + ",";
         if (measurement.mc_pm10_0)
-            payload += "mc_pm10_0=" + String(*measurement.mc_pm10_0) + ",";
+            payload += "mc_pm10_0=" + String(*measurement.mc_pm10_0, 2) + ",";
         if (measurement.nc_pm2_5)
-            payload += "nc_pm2_5=" + String(*measurement.nc_pm2_5) + ",";
-        if (measurement.typical_particle_size_um)
-            payload += "typical_particle_size_um=" + String(*measurement.typical_particle_size_um) + ",";
+            payload += "nc_pm2_5=" + String(*measurement.nc_pm2_5, 2) + ",";
+        if (measurement.typical_particle_size)
+            payload += "typical_particle_size=" + String(*measurement.typical_particle_size, 2) + ",";
 
         if (payload.endsWith(","))
             payload.remove(payload.length() - 1);
