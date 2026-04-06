@@ -32,8 +32,6 @@ struct Measurement {
 	std::unique_ptr<float> mc_pm1_0;
 	std::unique_ptr<float> mc_pm2_5;
 	std::unique_ptr<float> mc_pm10_0;
-	std::unique_ptr<float> nc_pm2_5;
-	std::unique_ptr<float> typical_particle_size;
 
     Measurement();
     void read_sensors_and_voltage(

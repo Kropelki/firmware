@@ -39,8 +39,6 @@ Measurement::Measurement()
 	, mc_pm1_0(nullptr)
 	, mc_pm2_5(nullptr)
 	, mc_pm10_0(nullptr)
-	, typical_particle_size(nullptr)
-	, nc_pm2_5(nullptr)
 {
 }
 
@@ -148,9 +146,6 @@ void Measurement::remove_invalid_measurements()
     if (mc_pm10_0)
         if (*mc_pm10_0 > 1000)
             mc_pm10_0 = nullptr;
-    if (nc_pm2_5)
-        if (*nc_pm2_5 > 3000)
-            nc_pm2_5 = nullptr;
 }
 
 void Measurement::calculate_derived_values()
@@ -204,10 +199,6 @@ void Measurement::print_all_values() const
         serial_log("MC PM2.5: " + String(*mc_pm2_5, 2) + " ug/m3");
     if (mc_pm10_0)
         serial_log("MC PM10.0: " + String(*mc_pm10_0, 2) + " ug/m3");
-    if (nc_pm2_5)
-        serial_log("NC PM2.5: " + String(*nc_pm2_5, 2) + " #/cm3");
-    if (typical_particle_size)
-        serial_log("Typical particle size: " + String(*typical_particle_size, 2) + " um");
 }
 
 /**
@@ -267,8 +258,6 @@ static bool read_sps30_data(SensirionI2cSps30& sps30_sensor, Measurement& measur
     float sum_mc_pm1_0 = 0.0f;
     float sum_mc_pm2_5 = 0.0f;
     float sum_mc_pm10_0 = 0.0f;
-    float sum_nc_pm2_5 = 0.0f;
-    float sum_typical_particle_size = 0.0f;
 
     for (uint8_t i = 0; i < SPS30_NUM_READINGS; ++i) {
         delay(SPS30_SAMPLING_INTERVAL_S * 1000);
@@ -287,8 +276,6 @@ static bool read_sps30_data(SensirionI2cSps30& sps30_sensor, Measurement& measur
         float raw_mc_pm1_0 = 0;
         float raw_mc_pm2_5 = 0;
         float raw_mc_pm10_0 = 0;
-        float raw_nc_pm2_5 = 0;
-        float raw_typical_particle_size = 0;
         float raw_ignored = 0;
 
         int16_t read_error = sps30_sensor.readMeasurementValuesFloat(
@@ -298,10 +285,10 @@ static bool read_sps30_data(SensirionI2cSps30& sps30_sensor, Measurement& measur
                 raw_mc_pm10_0,
 				raw_ignored, // nc_pm0_5
 				raw_ignored, // nc_pm1_0
-                raw_nc_pm2_5,
+                raw_ignored, // nc_pm2_5
 				raw_ignored, // nc_pm4_0
 				raw_ignored, // nc_pm10_0
-                raw_typical_particle_size);
+                raw_ignored); // typical_particle_size
         if (read_error != NO_ERROR) {
 			serial_log("SPS30: readMeasurementValuesFloat failed for sample " + String(i + 1) + " with error " + String(read_error) + ".");
             continue;
@@ -313,16 +300,12 @@ static bool read_sps30_data(SensirionI2cSps30& sps30_sensor, Measurement& measur
 			serial_log("  MC PM1.0: " + String(raw_mc_pm1_0) + " ug/m3");
 			serial_log("  MC PM2.5: " + String(raw_mc_pm2_5) + " ug/m3");
 			serial_log("  MC PM10.0: " + String(raw_mc_pm10_0) + " ug/m3");
-			serial_log("  NC PM2.5: " + String(raw_nc_pm2_5) + " #/cm3");
-			serial_log("  Typical particle size: " + String(raw_typical_particle_size) + " um");
 			serial_log("----------------------------------------");
 		}
 
         sum_mc_pm1_0 += raw_mc_pm1_0;
         sum_mc_pm2_5 += raw_mc_pm2_5;
         sum_mc_pm10_0 += raw_mc_pm10_0;
-        sum_nc_pm2_5 += raw_nc_pm2_5;
-        sum_typical_particle_size += raw_typical_particle_size;
         ++valid_readings;
     }
 
@@ -339,16 +322,12 @@ static bool read_sps30_data(SensirionI2cSps30& sps30_sensor, Measurement& measur
 	measurement.mc_pm1_0 = std::make_unique<float>(sum_mc_pm1_0 / valid_readings);
 	measurement.mc_pm2_5 = std::make_unique<float>(sum_mc_pm2_5 / valid_readings);
 	measurement.mc_pm10_0 = std::make_unique<float>(sum_mc_pm10_0 / valid_readings);
-	measurement.nc_pm2_5 = std::make_unique<float>(sum_nc_pm2_5 / valid_readings);
-	measurement.typical_particle_size = std::make_unique<float>(sum_typical_particle_size / valid_readings);
 
 	if(SPS30_DEBUG_VALUES) {
 		serial_log("SPS30: averaged values:");
 		serial_log("  MC PM1.0: " + String(*measurement.mc_pm1_0) + " ug/m3");
 		serial_log("  MC PM2.5: " + String(*measurement.mc_pm2_5) + " ug/m3");
 		serial_log("  MC PM10.0: " + String(*measurement.mc_pm10_0) + " ug/m3");
-		serial_log("  NC PM2.5: " + String(*measurement.nc_pm2_5) + " #/cm3");
-		serial_log("  Typical particle size: " + String(*measurement.typical_particle_size) + " um");
 	}
 
     serial_log("SPS30: averaged " + String(valid_readings) + " valid readings.");
