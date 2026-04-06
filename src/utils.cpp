@@ -17,6 +17,7 @@ void serial_log(String message)
 
 void isolate_all_rtc_gpio()
 {
+#ifdef ENV_ESP32DEV
     const gpio_num_t rtc_gpio_list[]
         = { GPIO_NUM_0, GPIO_NUM_2, GPIO_NUM_4, GPIO_NUM_12, GPIO_NUM_13, GPIO_NUM_14, GPIO_NUM_15, GPIO_NUM_25, GPIO_NUM_26,
               GPIO_NUM_27, GPIO_NUM_32, GPIO_NUM_33, GPIO_NUM_34, GPIO_NUM_35, GPIO_NUM_36, GPIO_NUM_37, GPIO_NUM_38, GPIO_NUM_39 };
@@ -24,6 +25,7 @@ void isolate_all_rtc_gpio()
     for (int i = 0; i < sizeof(rtc_gpio_list) / sizeof(rtc_gpio_list[0]); i++) {
         rtc_gpio_isolate(rtc_gpio_list[i]);
     }
+#endif
 }
 
 void connect_to_wifi()

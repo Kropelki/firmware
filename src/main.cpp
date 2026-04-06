@@ -18,20 +18,28 @@
 void setup()
 {
     unsigned long startTime = millis();
-    btStop();
+
+#ifdef ENV_ESP32DEV
+	btStop();
 
     pinMode(MOSFET_PIN, OUTPUT);
     digitalWrite(MOSFET_PIN, HIGH);
 
     analogReadResolution(12);
     analogSetAttenuation(ADC_11db);
+#endif
 
     Serial.begin(115200);
     while (!Serial) {
         delay(20);
     }
 
-    Wire.begin(21, 22); // SDA, SCL
+#ifdef ENV_ESP32DEV
+	Wire.begin(21, 22);
+#endif
+#ifdef ENV_ESP32C3_SUPER_MINI
+	Wire.begin(8, 9);
+#endif
 
     Adafruit_ADS1115 ads_sensor; // ADS1115: measures analog inputs
     Adafruit_AHTX0 aht_sensor; // AHT20: measures temperature and humidity
