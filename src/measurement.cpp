@@ -20,6 +20,12 @@
  */
 RTC_DATA_ATTR uint8_t cycles_since_sps30 = SPS30_MEASUREMENT_INTERVAL_CYCLES;
 
+/**
+ * SPS30 sensor needs to be cleaned every N cycles to maintain accuracy,
+ * so we also keep track of cycles since last cleaning in RTC memory.
+ */
+RTC_DATA_ATTR uint16_t cycles_since_sps30_cleaning = SPS30_CLEANING_INTERVAL_CYCLES;
+
 static float calculate_dew_point(float temperature, float humidity);
 static bool read_sps30_data(SensirionI2cSps30& sps30_sensor, Measurement& measurement);
 
@@ -245,10 +251,31 @@ static bool read_sps30_data(SensirionI2cSps30& sps30_sensor, Measurement& measur
         return false;
     }
 
-	// TODO: sensor cleaning every ~5 days:
-	// SPS30_CLEANING_TIME_S = 16
-	// sps30_sensor.startFanCleaning();
-	// delay(SPS30_CLEANING_TIME_S * 1000);
+	if (cycles_since_sps30_cleaning >= SPS30_CLEANING_INTERVAL_CYCLES) {
+		serial_log("SPS30: starting fan cleaning...");
+
+		int16_t cleaning_error = sps30_sensor.startFanCleaning();
+		if (cleaning_error != 0) {
+			serial_log("SPS30: startFanCleaning failed with error " + String(cleaning_error) + ".");
+		} else {
+			serial_log("SPS30: fan cleaning started successfully.");
+			delay(SPS30_CLEANING_TIME_S * 1000);
+			serial_log("SPS30: fan cleaning completed.");
+		}
+
+		/**
+		 * Same as with the measurement interval, we want to update the cleaning
+		 * cycle count regardless of whether the cleaning was successful or not,
+		 * to avoid draining the battery with repeated failed cleaning attempts.
+		 */
+		cycles_since_sps30_cleaning = SPS30_CLEANING_INTERVAL_CYCLES;
+
+		// TODO: maybe, in case of cleaning failure, let's not wait the full
+		// interval before the next cleaning attempt, but rather, half the interval?
+	} else {
+		cycles_since_sps30_cleaning++;
+		serial_log("SPS30: skipping fan cleaning this cycle (scheduled interval).");
+	}
 
     serial_log("SPS30: waiting " + String(SPS30_STARTUP_TIME_S) + "s startup stabilization time...");
     delay(SPS30_STARTUP_TIME_S * 1000);
