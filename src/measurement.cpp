@@ -85,6 +85,8 @@ void Measurement::read_sensors_and_voltage(
         serial_log("Could not find AHT20!");
 
     if (light_meter.begin()) {
+        if (!light_meter.setMTreg(BH1750_MTREG_MIN))
+            serial_log("BH1750: failed to set MTreg to minimum value.");
         delay(200);  // important
         illumination = std::make_unique<float>(light_meter.readLightLevel());
     } else
@@ -141,7 +143,11 @@ void Measurement::remove_invalid_measurements()
         if (*pressure_hpa < 300 || *pressure_hpa > 1100)
             pressure_hpa = nullptr;
     if (illumination)
-        if (*illumination < 0 || *illumination > 65535)
+        // BH1750 library formula (BH1750.cpp lines 268, 281):
+        //   lux = raw * (BH1750_DEFAULT_MTREG / MTreg) / BH1750_CONV_FACTOR
+        //       = raw * (69 / MTreg) / 1.2
+        // With MTreg=BH1750_MTREG_MIN=31 and raw=65535: 65535 * (69 / 31) / 1.2 = 121556.855 lux.
+        if (*illumination < 0 || *illumination > 121556.855f)
             illumination = nullptr;
     if (mc_pm1_0)
         if (*mc_pm1_0 > 1000)
