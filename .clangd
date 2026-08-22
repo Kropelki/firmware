@@ -1,0 +1,9 @@
+CompileFlags:
+    CompilationDatabase: .
+    Remove:
+        - -fno-tree-switch-conversion
+        - -fstrict-volatile-bitfields
+        # - -I*picolibc/include
+    # Add:
+    # - -D_READ_WRITE_RETURN_TYPE=int
+    # - -D_READ_WRITE_BUFSIZE_TYPE=int

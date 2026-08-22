@@ -5,3 +5,6 @@ env.h
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+
+# pio run -t compiledb
+compile_commands.json
